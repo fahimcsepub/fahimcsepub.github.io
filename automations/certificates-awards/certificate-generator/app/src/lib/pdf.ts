@@ -46,8 +46,8 @@ function assetUrl(base: string, filename: string): string {
 function loadAssets(baseUrl: string, templateId: CertificateTemplateId): Promise<AssetBytes> {
   const cacheKey = `${baseUrl}:${templateId}`;
   if (!assetCache.has(cacheKey)) {
-    const visualAssets = templateId === 'pust-classic'
-      ? ['pust_classic_border.png', 'pust_cse_logo_blue.png', 'pust_classic_seal.png']
+    const visualAssets = templateId === 'pub-classic'
+      ? ['pub_classic_border.png', 'pub_cse_logo_blue.png', 'pub_classic_seal.png']
       : ['modern_vintage_blank_background.png', 'cse_department_logo_charcoal_gold.png', 'modern_vintage_seal.png'];
     assetCache.set(
       cacheKey,
@@ -245,7 +245,7 @@ export async function generateCertificatePdf(
     document.embedFont(assets.bengaliBold, { subset: true }),
   ]);
 
-  if (templateId === 'pust-classic') {
+  if (templateId === 'pub-classic') {
     const scaleX = width / 1122;
     const scaleY = height / 794;
     const fromPpt = (left: number, top: number, boxWidth: number, boxHeight: number) => ({
@@ -272,7 +272,7 @@ export async function generateCertificatePdf(
 
     page.drawRectangle({ x: 0, y: 0, width, height, color: paper });
     page.drawImage(background, { x: 0, y: 0, width, height });
-    page.drawImage(logo, fromPpt(519, 92, 84, 84));
+    page.drawImage(logo, fromPpt(513, 86, 96, 96));
 
     const drawRightAligned = (
       text: string,
@@ -306,11 +306,11 @@ export async function generateCertificatePdf(
     const departmentFit = fitLines(department, sourceBold, 425.12 * scaleX, 1, 11.51 * scaleY, 7.5 * scaleY);
     drawCenteredTrackedText(page, department, baseline(221.15, 11.51), sourceBold, departmentFit.size, 1.85, mutedBlue);
 
-    const leftOrnament = fromPpt(521, 255.45, 30, 1);
-    const rightOrnament = fromPpt(571, 255.45, 30, 1);
+    const leftOrnament = fromPpt(521, 261.45, 30, 1);
+    const rightOrnament = fromPpt(571, 261.45, 30, 1);
     page.drawRectangle({ ...leftOrnament, color: ornamentGold });
     page.drawRectangle({ ...rightOrnament, color: ornamentGold });
-    const diamond = fromPpt(559, 253.95, 4, 4);
+    const diamond = fromPpt(559, 259.95, 4, 4);
     page.drawRectangle({
       x: diamond.x + diamond.width / 2,
       y: diamond.y,
@@ -321,14 +321,14 @@ export async function generateCertificatePdf(
     });
 
     const titleFit = fitLines(title, libreRegular, 929.86 * scaleX, 1, 25.2, 20);
-    drawCenteredLines(page, titleFit.lines, libreRegular, titleFit.size, baseline(273.95, 42) + 6.3, 32, titleInk);
+    drawCenteredLines(page, titleFit.lines, libreRegular, titleFit.size, baseline(279.95, 42) + 6.3, 32, titleInk);
 
     const subtitle = getCategoryLabel(record, options.settings).toUpperCase();
     const subtitleFit = fitLines(subtitle, sourceBold, 270 * scaleX, 1, 12.51 * scaleY, 7.5 * scaleY);
     const subtitleTracking = 1.6;
     const subtitleWidth = trackedTextWidth(subtitle, sourceBold, subtitleFit.size, subtitleTracking);
-    const subtitleY = baseline(334.3, 12.51);
-    const ruleY = height - (342.6 + 1) * scaleY;
+    const subtitleY = baseline(340.3, 12.51);
+    const ruleY = height - (348.6 + 1) * scaleY;
     const ruleWidth = 46 * scaleX;
     const ruleGap = 7 * scaleX;
     page.drawRectangle({ x: width / 2 - subtitleWidth / 2 - ruleGap - ruleWidth, y: ruleY, width: ruleWidth, height: scaleY, color: softGold });
@@ -340,7 +340,7 @@ export async function generateCertificatePdf(
       ['This Certificate of Excellence is proudly presented to'],
       libreItalic,
       9.35,
-      baseline(369.9, 14) + 1.15,
+      baseline(375.9, 14) + 1.15,
       12,
       mutedBlue,
     );
@@ -348,10 +348,10 @@ export async function generateCertificatePdf(
     const nameFont = containsBengali(record.recipientName) ? bengaliBold : libreBold;
     const fittedName = fitLines(record.recipientName.trim(), nameFont, 566.47 * scaleX, 2, 24.75, 16.5);
     const nameStart = fittedName.lines.length === 1
-      ? baseline(397.5, 43) + (43 * scaleY - fittedName.size)
-      : baseline(397.5, 27) + (27 * scaleY - fittedName.size);
+      ? baseline(403.5, 43) + (43 * scaleY - fittedName.size)
+      : baseline(403.5, 27) + (27 * scaleY - fittedName.size);
     drawCenteredLines(page, fittedName.lines, nameFont, fittedName.size, nameStart, fittedName.size * 1.14, blue);
-    const nameRule = fromPpt(281, 459.38, 560, 1);
+    const nameRule = fromPpt(281, 465.38, 560, 1);
     page.drawRectangle({ ...nameRule, color: rgb(217 / 255, 211 / 255, 198 / 255) });
 
     const recognition = `in recognition of outstanding achievement and an exemplary commitment to excellence, bringing distinction to the ${options.settings.departmentName}, ${options.settings.universityName}.`;
@@ -361,7 +361,7 @@ export async function generateCertificatePdf(
       recognitionFit.lines,
       libreRegular,
       recognitionFit.size,
-      baseline(470.38, 14.51) - 7.5,
+      baseline(476.38, 14.51) - 7.5,
       recognitionFit.size * 1.46,
       bodyInk,
     );
@@ -369,7 +369,7 @@ export async function generateCertificatePdf(
     const citation = generateCitation(record, options.settings);
     const citationFont = containsBengali(citation) ? bengaliRegular : libreItalic;
     const fittedCitation = fitLines(citation, citationFont, 679.8 * scaleX, 3, 14 * scaleY, 8.5 * scaleY);
-    const citationStart = baseline(556.85, 14) - 7.5 + (fittedCitation.lines.length === 3 ? 5 : 0);
+    const citationStart = baseline(557.19, 14) - 7.5 + (fittedCitation.lines.length === 3 ? 5 : 0);
     drawCenteredLines(
       page,
       fittedCitation.lines,
@@ -384,7 +384,7 @@ export async function generateCertificatePdf(
     const rightSignatureRule = fromPpt(726, 669.2, 300, 1);
     const leftSignatureBox = fromPpt(96, 615, 300, 48);
     const rightSignatureBox = fromPpt(726, 615, 300, 48);
-    const centeredSignatureBox = fromPpt(411, 615, 300, 48);
+    const centeredSignatureBox = fromPpt(401, 597.8, 320, 48);
     const signatureCenters = record.signatureLayout === 'one'
       ? [width / 2]
       : [leftSignatureRule.x + leftSignatureRule.width / 2, rightSignatureRule.x + rightSignatureRule.width / 2];
@@ -403,14 +403,18 @@ export async function generateCertificatePdf(
       }
     }
     signatureCenters.forEach((center, index) => {
-      const lineWidth = 300 * scaleX;
-      page.drawRectangle({ x: center - lineWidth / 2, y: leftSignatureRule.y, width: lineWidth, height: scaleY, color: signatureInk });
+      const lineWidth = (record.signatureLayout === 'one' ? 320 : 300) * scaleX;
+      const lineY = record.signatureLayout === 'one' ? fromPpt(401, 651.8, 320, 1).y : leftSignatureRule.y;
+      page.drawRectangle({ x: center - lineWidth / 2, y: lineY, width: lineWidth, height: scaleY, color: signatureInk });
       const label = signatureLabels[index];
-      const fitted = fitLines(label, libreRegular, 300 * scaleX, 2, 7.5, 6);
+      const fitted = fitLines(label, libreRegular, lineWidth, 2, record.signatureLayout === 'one' ? 10.13 : 7.5, 6);
+      const labelY = record.signatureLayout === 'one'
+        ? baseline(663.8, 13.51) + (13.51 * scaleY - fitted.size)
+        : baseline(681.2, 13.51) + (13.51 * scaleY - fitted.size);
       fitted.lines.forEach((line, lineIndex) => {
         page.drawText(line, {
           x: center - libreRegular.widthOfTextAtSize(line, fitted.size) / 2,
-          y: baseline(681.2, 13.51) + (13.51 * scaleY - fitted.size) - lineIndex * fitted.size * 1.15,
+          y: labelY - lineIndex * fitted.size * 1.15,
           size: fitted.size,
           font: libreRegular,
           color: signatoryInk,
@@ -418,7 +422,20 @@ export async function generateCertificatePdf(
       });
     });
 
-    page.drawImage(seal, record.signatureLayout === 'two' ? fromPpt(532, 638, 58, 58) : fromPpt(532, 568, 58, 58));
+    if (record.signatureLayout === 'one') {
+      const departmentContext = options.settings.departmentName.replace(/^Department of\s+/i, '').toUpperCase();
+      drawCenteredTrackedText(
+        page,
+        departmentContext,
+        baseline(683.6, 10.51),
+        sourceRegular,
+        6.5,
+        1.05,
+        rgb(124 / 255, 133 / 255, 139 / 255),
+      );
+    } else {
+      page.drawImage(seal, fromPpt(532, 638, 58, 58));
+    }
     return document.save({ useObjectStreams: true });
   }
 
@@ -562,8 +579,6 @@ export async function generateCertificatePdf(
 
   if (record.signatureLayout === 'two') {
     page.drawImage(seal, fromPpt(518, 564, 87, 87));
-  } else {
-    page.drawImage(seal, fromPpt(518, 532, 87, 87));
   }
 
   return document.save({ useObjectStreams: true });

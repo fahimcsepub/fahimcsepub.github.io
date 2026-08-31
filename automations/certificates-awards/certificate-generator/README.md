@@ -15,10 +15,12 @@ This privacy-first browser application generates print-ready A4 landscape certif
 
 ## Certificate templates
 
-**PUST Classic Blue is the official default template** for new certificates and CSV rows that do not specify a template. Users can still select Modern Vintage for an individual certificate or change their saved default in Settings.
+**PUB Classic Blue is the official default template** for new certificates and CSV rows that do not specify a template. Users can still select Modern Vintage for an individual certificate or change their saved default in Settings.
 
 - `Modern Vintage`
-- `PUST Classic Blue`
+- `PUB Classic Blue`
+
+Both templates use a centered, seal-free signature block in one-signature mode. Two-signature certificates retain the approved centered seal and their original left/right signature formatting.
 
 The approved source PowerPoint files are retained in [`references/`](references/). Print-ready non-sensitive examples are available in [`samples/pdf/`](samples/pdf/).
 
@@ -67,9 +69,9 @@ recipient_name,award_category,template,achievement_type,batch,semester,award_yea
 
 ```csv
 recipient_name,award_category,template,achievement_type,batch,semester,award_year,issue_date,certificate_number,article_title,journal_name,doi,publication_url,q1_verified,competition_or_event,position_or_award,achievement_area,custom_citation
-Nusrat Jahan,Academic Excellence Award,PUST Classic Blue,,12,Spring,2026,2026-08-30,,,,,,,,,,
+Nusrat Jahan,Academic Excellence Award,PUB Classic Blue,,12,Spring,2026,2026-08-30,,,,,,,,,,
 Mahmud Hasan,Research Excellence Award,Modern Vintage,,,Spring,2026,2026-08-30,,Efficient Learning for Smart Systems,Example Computing Journal,10.0000/example,https://example.org/article,yes,,,,
-Team Pundra,Outstanding Achievement Award,PUST Classic Blue,competition,,Spring,2026,2026-08-30,,,,,,,National Programming Contest,Champion,,
+Team Pundra,Outstanding Achievement Award,PUB Classic Blue,competition,,Spring,2026,2026-08-30,,,,,,,National Programming Contest,Champion,,
 Ayesha Rahman,Outstanding Achievement Award,Modern Vintage,general,,Spring,2026,2026-08-30,,,,,,,,,International robotics innovation,
 ```
 
@@ -86,7 +88,7 @@ Ayesha Rahman,Outstanding Achievement Award,Modern Vintage,general,,Spring,2026,
 
 - `issue_date`: use `YYYY-MM-DD`.
 - `semester`: `Spring`, `Summer`, `Fall`, or `Autumn`.
-- `template`: `Modern Vintage`, `PUST Classic Blue`, `modern-vintage`, or `pust-classic`.
+- `template`: `Modern Vintage`, `PUB Classic Blue`, `modern-vintage`, or `pub-classic`. The former `PUST Classic Blue` and `pust-classic` values remain accepted as legacy aliases.
 - `award_category`: use the full award name, a configured custom alias, or legacy aliases `AE`, `RE`, and `OA`.
 - `achievement_type`: use `competition` or `general` for Outstanding Achievement.
 - `q1_verified`: accepted true values are `yes`, `true`, `y`, `1`, and `verified`.

@@ -58,7 +58,7 @@ Recommended functional categories are:
 The first production module is the Certificate Generator. It supports:
 
 - Academic Excellence, Research Excellence, and Outstanding Achievement awards.
-- Modern Vintage and PUST Classic Blue templates.
+- Modern Vintage and PUB Classic Blue templates.
 - Single-certificate and CSV bulk generation.
 - Custom award-category mappings and citation templates.
 - Automatic `CSE/SPR-2026/001` style numbering.
@@ -115,4 +115,3 @@ Then add it to both the root automation directory and `automations/README.md`. F
 - Document whether an automation operates locally or transmits data externally.
 - Require authorization before embedding or using an official digital signature.
 - Back up browser-local records when a module stores data only on the current device.
-

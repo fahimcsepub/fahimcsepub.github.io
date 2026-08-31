@@ -162,13 +162,13 @@ export function revalidateBulkRows(rows: BulkRow[], register: RegisterEntry[], s
 export function sampleCsv(): string {
   const rows = [
     {
-      recipient_name: 'Nusrat Jahan', award_category: 'Academic Excellence Award', template: 'PUST Classic Blue', achievement_type: '', batch: '12', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: '', journal_name: '', doi: '', publication_url: '', q1_verified: '', competition_or_event: '', position_or_award: '', achievement_area: '', custom_citation: '',
+      recipient_name: 'Nusrat Jahan', award_category: 'Academic Excellence Award', template: 'PUB Classic Blue', achievement_type: '', batch: '12', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: '', journal_name: '', doi: '', publication_url: '', q1_verified: '', competition_or_event: '', position_or_award: '', achievement_area: '', custom_citation: '',
     },
     {
       recipient_name: 'Mahmud Hasan', award_category: 'Research Excellence Award', template: 'Modern Vintage', achievement_type: '', batch: '', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: 'Efficient Learning for Smart Systems', journal_name: 'Example Computing Journal', doi: '10.0000/example', publication_url: 'https://example.org/article', q1_verified: 'yes', competition_or_event: '', position_or_award: '', achievement_area: '', custom_citation: '',
     },
     {
-      recipient_name: 'Team Pundra', award_category: 'Outstanding Achievement Award', template: 'PUST Classic Blue', achievement_type: 'competition', batch: '', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: '', journal_name: '', doi: '', publication_url: '', q1_verified: '', competition_or_event: 'National Programming Contest', position_or_award: 'Champion', achievement_area: '', custom_citation: '',
+      recipient_name: 'Team Pundra', award_category: 'Outstanding Achievement Award', template: 'PUB Classic Blue', achievement_type: 'competition', batch: '', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: '', journal_name: '', doi: '', publication_url: '', q1_verified: '', competition_or_event: 'National Programming Contest', position_or_award: 'Champion', achievement_area: '', custom_citation: '',
     },
   ];
   return `\uFEFF${Papa.unparse(rows, { columns: [...CSV_HEADERS] })}`;

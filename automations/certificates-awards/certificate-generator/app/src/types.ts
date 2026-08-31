@@ -4,7 +4,7 @@ export type AchievementType = 'competition' | 'general';
 export type Semester = 'Spring' | 'Summer' | 'Fall';
 export type SignatureMode = 'wet' | 'digital';
 export type SignatureLayout = 'one' | 'two';
-export type CertificateTemplateId = 'modern-vintage' | 'pust-classic';
+export type CertificateTemplateId = 'modern-vintage' | 'pub-classic';
 
 export interface CustomAwardMapping {
   id: `custom:${string}`;

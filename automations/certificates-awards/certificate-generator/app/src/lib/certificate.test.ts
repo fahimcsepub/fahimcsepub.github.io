@@ -12,9 +12,9 @@ import {
 } from './certificate';
 
 describe('certificate conventions', () => {
-  it('uses PUST Classic Blue as the official default template', () => {
-    expect(DEFAULT_SETTINGS.defaultTemplateId).toBe('pust-classic');
-    expect(emptyRecord(DEFAULT_SETTINGS).templateId).toBe('pust-classic');
+  it('uses PUB Classic Blue as the official default template', () => {
+    expect(DEFAULT_SETTINGS.defaultTemplateId).toBe('pub-classic');
+    expect(emptyRecord(DEFAULT_SETTINGS).templateId).toBe('pub-classic');
   });
 
   it('uses term-based numbering without award abbreviations', () => {
@@ -29,7 +29,8 @@ describe('certificate conventions', () => {
     expect(normalizeCategory('OA')).toBe('outstanding');
     expect(normalizeSemester('Autumn')).toBe('Fall');
     expect(parseCertificateNumber('CSE/SPR-2025/001')?.serial).toBe(1);
-    expect(normalizeTemplateId('PUST Classic Blue')).toBe('pust-classic');
+    expect(normalizeTemplateId('PUB Classic Blue')).toBe('pub-classic');
+    expect(normalizeTemplateId('PUST Classic Blue')).toBe('pub-classic');
     expect(normalizeTemplateId('Modern Vintage')).toBe('modern-vintage');
   });
 

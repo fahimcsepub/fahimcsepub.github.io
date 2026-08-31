@@ -8,7 +8,7 @@ describe('bulk CSV import', () => {
     expect(result.fileErrors).toEqual([]);
     expect(result.rows).toHaveLength(3);
     expect(result.rows.every((row) => row.errors.length === 0)).toBe(true);
-    expect(result.rows.map((row) => row.record.templateId)).toEqual(['pust-classic', 'modern-vintage', 'pust-classic']);
+    expect(result.rows.map((row) => row.record.templateId)).toEqual(['pub-classic', 'modern-vintage', 'pub-classic']);
     expect(result.rows.map((row) => row.record.certificateNumber)).toEqual([
       'CSE/SPR-2026/001',
       'CSE/SPR-2026/002',

@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { basename, join } from 'node:path';
-import { PDFDocument } from 'pdf-lib';
+import { basename, join, resolve } from 'node:path';
+import { PDFDict, PDFDocument, PDFName } from 'pdf-lib';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SETTINGS, emptyRecord } from './certificate';
 import { A4_LANDSCAPE, generateCertificatePdf } from './pdf';
@@ -10,9 +10,9 @@ const assetMap: Record<string, string> = {
   'modern_vintage_blank_background.png': join(projectRoot, 'public', 'assets', 'modern_vintage_blank_background.png'),
   'cse_department_logo_charcoal_gold.png': join(projectRoot, 'public', 'assets', 'cse_department_logo_charcoal_gold.png'),
   'modern_vintage_seal.png': join(projectRoot, 'public', 'assets', 'modern_vintage_seal.png'),
-  'pust_classic_border.png': join(projectRoot, 'public', 'assets', 'pust_classic_border.png'),
-  'pust_cse_logo_blue.png': join(projectRoot, 'public', 'assets', 'pust_cse_logo_blue.png'),
-  'pust_classic_seal.png': join(projectRoot, 'public', 'assets', 'pust_classic_seal.png'),
+  'pub_classic_border.png': join(projectRoot, 'public', 'assets', 'pub_classic_border.png'),
+  'pub_cse_logo_blue.png': join(projectRoot, 'public', 'assets', 'pub_cse_logo_blue.png'),
+  'pub_classic_seal.png': join(projectRoot, 'public', 'assets', 'pub_classic_seal.png'),
   'libre-baskerville-latin-400-normal.woff': join(projectRoot, 'node_modules', '@fontsource', 'libre-baskerville', 'files', 'libre-baskerville-latin-400-normal.woff'),
   'libre-baskerville-latin-400-italic.woff': join(projectRoot, 'node_modules', '@fontsource', 'libre-baskerville', 'files', 'libre-baskerville-latin-400-italic.woff'),
   'libre-baskerville-latin-700-normal.woff': join(projectRoot, 'node_modules', '@fontsource', 'libre-baskerville', 'files', 'libre-baskerville-latin-700-normal.woff'),
@@ -58,10 +58,10 @@ describe('PDF generation', () => {
     }
   }, 15_000);
 
-  it('renders the supplied PUST Classic PowerPoint template as a PDF option', async () => {
+  it('renders the supplied PUB Classic PowerPoint template as a PDF option', async () => {
     const record = {
       ...emptyRecord(DEFAULT_SETTINGS),
-      templateId: 'pust-classic' as const,
+      templateId: 'pub-classic' as const,
       recipientName: 'Md. Forhan Shahriar',
       batch: '27',
       awardYear: '2024',
@@ -77,10 +77,49 @@ describe('PDF generation', () => {
     expect(pdf.getPage(0).getSize().width).toBeCloseTo(A4_LANDSCAPE[0], 1);
     expect(pdf.getTitle()).toBe('Academic Excellence Award - Md. Forhan Shahriar');
     expect(`${pdf.getTitle()} ${pdf.getSubject()}`).not.toMatch(/\{\{|PLACEHOLDER|ENTER NAME/i);
+    const xObjects = pdf.getPage(0).node.Resources()!.lookup(PDFName.of('XObject'), PDFDict);
+    expect(xObjects?.keys()).toHaveLength(3);
     if (process.env.CSE_WRITE_SAMPLE === '1') {
       const outputDirectory = join(projectRoot, 'tmp', 'pdfs');
       await mkdir(outputDirectory, { recursive: true });
-      await writeFile(join(outputDirectory, 'PUST_Classic_Certificate_Sample.pdf'), bytes);
+      await writeFile(join(outputDirectory, 'PUB_Classic_Certificate_Sample.pdf'), bytes);
+    }
+  }, 15_000);
+
+  it('renders a clear one-signature layout in both certificate templates', async () => {
+    const baseRecord = {
+      ...emptyRecord(DEFAULT_SETTINGS),
+      recipientName: 'Ankar Kumar Saha',
+      batch: '12',
+      semester: 'Summer' as const,
+      awardYear: '2026',
+      issueDate: '2026-08-31',
+      certificateNumber: 'CSE/SUM-2026/002',
+      signatureLayout: 'one' as const,
+      customCitation: 'For an exceptional achievement in Academic Duty, bringing distinction to the Department of Computer Science & Engineering.',
+    };
+    const previews = await Promise.all((['pub-classic', 'modern-vintage'] as const).map(async (templateId) => ({
+      templateId,
+      bytes: await generateCertificatePdf({ ...baseRecord, templateId }, {
+        settings: DEFAULT_SETTINGS,
+        assetBaseUrl: 'http://test.local/assets/',
+      }),
+    })));
+
+    for (const preview of previews) {
+      const pdf = await PDFDocument.load(preview.bytes);
+      expect(pdf.getPageCount()).toBe(1);
+      expect(pdf.getPage(0).getSize().width).toBeCloseTo(A4_LANDSCAPE[0], 1);
+      const xObjects = pdf.getPage(0).node.Resources()!.lookup(PDFName.of('XObject'), PDFDict);
+      expect(xObjects?.keys()).toHaveLength(2);
+    }
+
+    if (process.env.CSE_WRITE_ONE_SIGNATURE_PREVIEW === '1') {
+      const outputDirectory = resolve(projectRoot, '..', '..', '..', '..', 'output', 'pdf');
+      await mkdir(outputDirectory, { recursive: true });
+      for (const preview of previews) {
+        await writeFile(join(outputDirectory, `one-signature-${preview.templateId}-preview.pdf`), preview.bytes);
+      }
     }
   }, 15_000);
 });

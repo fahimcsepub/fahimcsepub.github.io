@@ -32,9 +32,9 @@ export const CERTIFICATE_TEMPLATES: Array<{
     description: 'Charcoal-and-gold ornamental certificate.',
   },
   {
-    id: 'pust-classic',
-    label: 'PUST Classic Blue',
-    description: 'Exact blue-and-gold layout from the supplied PowerPoint.',
+    id: 'pub-classic',
+    label: 'PUB Classic Blue',
+    description: 'Official blue-and-gold layout from the supplied PUB PowerPoint.',
   },
 ];
 
@@ -47,7 +47,7 @@ export const DEFAULT_SETTINGS: GeneratorSettings = {
   signatoryTwoLabel: 'Dean, Faculty of Science & Engineering',
   defaultSignatureMode: 'wet',
   defaultSignatureLayout: 'two',
-  defaultTemplateId: 'pust-classic',
+  defaultTemplateId: 'pub-classic',
   customAwardMappings: [],
 };
 
@@ -96,7 +96,7 @@ export function emptyRecord(settings = DEFAULT_SETTINGS): CertificateRecord {
 export function normalizeTemplateId(value: string | undefined): CertificateTemplateId | null {
   const normalized = (value ?? '').trim().toLowerCase().replace(/[_\s]+/g, '-');
   if (['modern-vintage', 'modern', 'vintage', 'template-1'].includes(normalized)) return 'modern-vintage';
-  if (['pust-classic', 'pust-classic-blue', 'classic', 'classic-blue', 'template-2'].includes(normalized)) return 'pust-classic';
+  if (['pub-classic', 'pub-classic-blue', 'pust-classic', 'pust-classic-blue', 'classic', 'classic-blue', 'template-2'].includes(normalized)) return 'pub-classic';
   return null;
 }
 

@@ -3,6 +3,7 @@
 **/.vite/
 **/coverage/
 **/tmp/
+/output/
 *.tsbuildinfo
 *.log
 .DS_Store
