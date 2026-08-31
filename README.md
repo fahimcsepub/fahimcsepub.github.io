@@ -59,7 +59,7 @@ Recommended functional categories are:
 
 The first production module is the Certificate Generator. It supports:
 
-- Academic Excellence, Research Excellence, and Outstanding Achievement awards.
+- Academic Excellence, Research Excellence, Outstanding Achievement, and Course Coordination Excellence awards.
 - Modern Vintage and PUB Classic Blue templates.
 - Single-certificate and CSV bulk generation.
 - Custom award-category mappings and citation templates.

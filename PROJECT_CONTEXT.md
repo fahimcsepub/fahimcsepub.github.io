@@ -40,8 +40,7 @@ The Git repository root is `PUB-CSE-Automations`, not the current workspace's pa
 ## Current state
 
 - Default branch: `main`.
-- Latest completed feature: ready-made **Course Coordination Excellence Award** custom mapping.
-- That change was merged through PR #2: <https://github.com/fahimcsepub/fahimcsepub.github.io/pull/2>.
+- Current award model includes **Course Coordination Excellence Award** as a permanent fourth built-in category.
 - GitHub Pages deployment completed successfully after the merge.
 - At the last verification, all **19 Vitest tests** passed and the Vite production build succeeded.
 - The site is designed to work at the GitHub Pages root and under relative asset paths.
@@ -126,8 +125,13 @@ The award category appears as the subtitle. Built-in categories are:
 1. Academic Excellence Award
 2. Research Excellence Award
 3. Outstanding Achievement Award
+4. Course Coordination Excellence Award
 
 Custom mappings behave like first-class categories and can define reusable fields, validation, aliases, and a citation template.
+
+The PDF body uses a single category-specific recognition statement after the recipient name. Do not restore the former generic paragraph about “outstanding achievement,” “commitment to excellence,” and “bringing distinction”; it duplicated the category citation. The neutral presentation line is `This certificate is proudly presented to`. Automatic and custom citations must therefore be complete standalone statements.
+
+Research Excellence supports both general and Q1 publications. `q1Verified=false` is a valid general publication and must not print a ranking claim. `q1Verified=true` is selected only after verification for the relevant publication year and appends `a Q1-ranked journal`. The recommended base wording is `In recognition of the publication of the research article “{{ARTICLE_TITLE}}” in {{JOURNAL_NAME}}.`
 
 Academic Excellence supports three explicit ranking scopes:
 
@@ -145,23 +149,23 @@ Citation behavior is explicit:
 
 Tie-breaking rules and winner selection are outside this app. Approved recipients are determined before data entry; tie-break details must not be printed on certificates.
 
-### Course Coordinator preset
+### Course Coordination award
 
-The app ships this ready-made custom mapping:
+The app ships Course Coordination Excellence as a permanent built-in award:
 
-- ID: `custom:course-coordination`
+- Category ID: `coordination`
 - Label: `Course Coordination Excellence Award`
 - CSV aliases: `CCEA`, `Course Coordinator`
-- Required field key: `coordination_period`
+- Required record field: `coordinationPeriod`
 - Field label: `Coordination period`
-- CSV column: `field_coordination_period`
+- CSV column: `coordination_period`
 - Example: `Spring 2025 – Summer 2026`
 - Citation token: `{{COORDINATION_PERIOD}}`
 - Recommended citation:
 
-> For successfully completing the appointed term as Course Coordinator of the Department of Computer Science & Engineering during {{COORDINATION_PERIOD}}, in recognition of dedicated service, academic leadership, and valuable contributions to the department.
+> In recognition of dedicated service and academic leadership upon completing the appointment as Course Coordinator of the Department of Computer Science & Engineering for the period {{COORDINATION_PERIOD}}.
 
-`App.tsx` uses a settings schema version and a one-time migration to add this preset for existing users. The migration detects the ID, exact label, or `Course Coordinator` alias to prevent duplicates. Once a migrated user intentionally removes it, it must stay removed; do not re-add the preset on every application start.
+The category is always present and does not depend on browser settings. `App.tsx` removes the former custom preset from saved settings to prevent a duplicate option. Record normalization converts legacy `custom:course-coordination` records and their `customFields.coordination_period` value into the built-in category. CSV import accepts the former `field_coordination_period` column for backward compatibility; new files use `coordination_period`.
 
 ### Certificate numbering
 
@@ -193,7 +197,7 @@ Custom mapping UX should remain understandable to a non-technical departmental u
 - Mappings can be edited, disabled, removed, and reordered without breaking historical register records.
 - Custom citation mode remains available per certificate and per CSV row even when a mapping has recommended wording.
 
-When adding another official preset, implement its default, normalization/alias behavior, migration strategy, CSV sample/header behavior, validation tests, and documentation together.
+When adding another official built-in category or optional custom preset, implement its normalization/alias behavior, migration strategy, form and bulk fields, CSV sample/header behavior, validation tests, and documentation together.
 
 ## Bulk CSV and register rules
 
@@ -254,7 +258,7 @@ Current automated test areas:
 - Citation mapping and validation
 - Academic ranking scopes and custom citations
 - Certificate-number generation and uniqueness behavior
-- Course Coordinator preset/migration helper
+- Course Coordinator built-in category and legacy migration
 - CSV aliases, custom fields, Bengali/quoted content, and invalid rows
 - PDF size/layout and placeholder safety
 

@@ -117,6 +117,55 @@ function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): 
   return lines;
 }
 
+function balanceWrappedLines(
+  text: string,
+  font: PDFFont,
+  size: number,
+  maxWidth: number,
+  lineCount: number,
+): string[] {
+  if (lineCount <= 1) return wrapText(text, font, size, maxWidth);
+  const words = text.trim().split(/\s+/).flatMap((word) =>
+    font.widthOfTextAtSize(word, size) > maxWidth ? splitLongWord(word, font, size, maxWidth) : [word],
+  );
+  if (words.length <= lineCount) return words;
+  const wordWidths = words.map((word) => font.widthOfTextAtSize(word, size));
+  const spaceWidth = font.widthOfTextAtSize(' ', size);
+  const totalWidth = wordWidths.reduce((sum, width) => sum + width, 0)
+    + Math.max(0, words.length - lineCount) * spaceWidth;
+  const targetWidth = totalWidth / lineCount;
+  const costs = Array.from({ length: lineCount + 1 }, () => Array(words.length + 1).fill(Number.POSITIVE_INFINITY));
+  const breaks = Array.from({ length: lineCount + 1 }, () => Array(words.length + 1).fill(-1));
+  costs[0][0] = 0;
+
+  for (let line = 1; line <= lineCount; line += 1) {
+    for (let end = line; end <= words.length; end += 1) {
+      let width = 0;
+      for (let start = end - 1; start >= line - 1; start -= 1) {
+        width = wordWidths[start] + (start === end - 1 ? 0 : spaceWidth + width);
+        if (width > maxWidth) break;
+        const previous = costs[line - 1][start];
+        if (!Number.isFinite(previous)) continue;
+        const cost = previous + (width - targetWidth) ** 2;
+        if (cost < costs[line][end]) {
+          costs[line][end] = cost;
+          breaks[line][end] = start;
+        }
+      }
+    }
+  }
+
+  if (!Number.isFinite(costs[lineCount][words.length])) return wrapText(text, font, size, maxWidth);
+  const lines: string[] = [];
+  let end = words.length;
+  for (let line = lineCount; line > 0; line -= 1) {
+    const start = breaks[line][end];
+    lines.unshift(words.slice(start, end).join(' '));
+    end = start;
+  }
+  return lines;
+}
+
 function fitLines(
   text: string,
   font: PDFFont,
@@ -127,7 +176,9 @@ function fitLines(
 ): { lines: string[]; size: number } {
   for (let size = maxSize; size >= minSize; size -= 0.5) {
     const lines = wrapText(text, font, size, maxWidth);
-    if (lines.length <= maxLines) return { lines, size };
+    if (lines.length <= maxLines) {
+      return { lines: balanceWrappedLines(text, font, size, maxWidth, lines.length), size };
+    }
   }
   throw new Error(`Text is too long to fit in ${maxLines} line${maxLines === 1 ? '' : 's'}.`);
 }
@@ -260,7 +311,6 @@ export async function generateCertificatePdf(
     const paper = rgb(246 / 255, 243 / 255, 236 / 255);
     const blue = rgb(18 / 255, 58 / 255, 95 / 255);
     const titleInk = rgb(31 / 255, 43 / 255, 53 / 255);
-    const bodyInk = rgb(59 / 255, 66 / 255, 69 / 255);
     const mutedBlue = rgb(90 / 255, 108 / 255, 120 / 255);
     const gold = rgb(138 / 255, 110 / 255, 54 / 255);
     const ornamentGold = rgb(169 / 255, 136 / 255, 74 / 255);
@@ -337,7 +387,7 @@ export async function generateCertificatePdf(
 
     drawCenteredLines(
       page,
-      ['This Certificate of Excellence is proudly presented to'],
+      ['This certificate is proudly presented to'],
       libreItalic,
       9.35,
       baseline(375.9, 14) + 1.15,
@@ -354,22 +404,10 @@ export async function generateCertificatePdf(
     const nameRule = fromPpt(281, 465.38, 560, 1);
     page.drawRectangle({ ...nameRule, color: rgb(217 / 255, 211 / 255, 198 / 255) });
 
-    const recognition = `in recognition of outstanding achievement and an exemplary commitment to excellence, bringing distinction to the ${options.settings.departmentName}, ${options.settings.universityName}.`;
-    const recognitionFit = fitLines(recognition, libreRegular, 727.18 * scaleX, 2, 14.51 * scaleY, 9 * scaleY);
-    drawCenteredLines(
-      page,
-      recognitionFit.lines,
-      libreRegular,
-      recognitionFit.size,
-      baseline(476.38, 14.51) - 7.5,
-      recognitionFit.size * 1.46,
-      bodyInk,
-    );
-
     const citation = generateCitation(record, options.settings);
     const citationFont = containsBengali(citation) ? bengaliRegular : libreItalic;
-    const fittedCitation = fitLines(citation, citationFont, 679.8 * scaleX, 3, 14 * scaleY, 8.5 * scaleY);
-    const citationStart = baseline(557.19, 14) - 7.5 + (fittedCitation.lines.length === 3 ? 5 : 0);
+    const fittedCitation = fitLines(citation, citationFont, 727.18 * scaleX, 3, 14 * scaleY, 8.5 * scaleY);
+    const citationStart = baseline(515.5, 14) - 7.5 + (fittedCitation.lines.length === 3 ? 5 : 0);
     drawCenteredLines(
       page,
       fittedCitation.lines,
@@ -494,7 +532,7 @@ export async function generateCertificatePdf(
   drawCenteredLines(page, [subtitle], sourceBold, subtitleFit.size, 375.8, 9, gold);
   drawCenteredLines(
     page,
-    ['This Certificate of Excellence is proudly presented to'],
+    ['This certificate is proudly presented to'],
     libreRegular,
     12.75,
     354.7,
@@ -509,25 +547,11 @@ export async function generateCertificatePdf(
   const nameRule = fromPpt(260, 400, 603, 1.5);
   page.drawRectangle({ x: nameRule.x, y: nameRule.y, width: nameRule.width, height: nameRule.height, color: charcoal });
 
-  drawCenteredLines(
-    page,
-    [
-      'in recognition of outstanding achievement and an exemplary commitment to excellence,',
-      'bringing distinction to the Department of Computer Science & Engineering,',
-      'Pundra University of Science & Technology.',
-    ],
-    libreRegular,
-    12.75,
-    264.8,
-    13.8,
-    charcoal,
-  );
-
   const citation = generateCitation(record, options.settings);
   const citationFont = containsBengali(citation) ? bengaliRegular : libreRegular;
   const renderedCitationFont = containsBengali(citation) ? citationFont : libreItalic;
-  const fittedCitation = fitLines(citation, renderedCitationFont, 535, 3, 11.25, 8.2);
-  const citationStart = fittedCitation.lines.length === 1 ? 201.5 : fittedCitation.lines.length === 2 ? 207.5 : 213;
+  const fittedCitation = fitLines(citation, renderedCitationFont, 630, 3, 12.25, 8.5);
+  const citationStart = fittedCitation.lines.length === 1 ? 245 : fittedCitation.lines.length === 2 ? 251 : 257;
   drawCenteredLines(
     page,
     fittedCitation.lines,

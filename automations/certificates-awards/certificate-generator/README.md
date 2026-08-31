@@ -11,7 +11,7 @@ This privacy-first browser application generates print-ready A4 landscape certif
 - Academic Excellence Award
 - Research Excellence Award
 - Outstanding Achievement Award
-- Course Coordination Excellence Award (ready-made custom mapping)
+- Course Coordination Excellence Award
 - Reusable custom award mappings created in Settings
 
 ## Certificate templates
@@ -60,25 +60,26 @@ q1_verified
 competition_or_event
 position_or_award
 achievement_area
+coordination_period
 citation_mode
 custom_citation
-field_coordination_period
 ```
 
 Exact header row:
 
 ```csv
-recipient_name,award_category,template,achievement_type,academic_scope,study_semester,ranking_group,batch,semester,award_year,issue_date,certificate_number,article_title,journal_name,doi,publication_url,q1_verified,competition_or_event,position_or_award,achievement_area,citation_mode,custom_citation,field_coordination_period
+recipient_name,award_category,template,achievement_type,academic_scope,study_semester,ranking_group,batch,semester,award_year,issue_date,certificate_number,article_title,journal_name,doi,publication_url,q1_verified,competition_or_event,position_or_award,achievement_area,coordination_period,citation_mode,custom_citation
 ```
 
 ## Mixed-category CSV example
 
 ```csv
-recipient_name,award_category,template,achievement_type,academic_scope,study_semester,ranking_group,batch,semester,award_year,issue_date,certificate_number,article_title,journal_name,doi,publication_url,q1_verified,competition_or_event,position_or_award,achievement_area,citation_mode,custom_citation,field_coordination_period
-Nusrat Jahan,Academic Excellence Award,PUB Classic Blue,,semester,4th Semester,,,Spring,2026,2026-08-30,,,,,,,,,,automatic,,
-Mahmud Hasan,Research Excellence Award,Modern Vintage,,,,,,Spring,2026,2026-08-30,,Efficient Learning for Smart Systems,Example Computing Journal,10.0000/example,https://example.org/article,yes,,,,automatic,,
-Team Pundra,Outstanding Achievement Award,PUB Classic Blue,competition,,,,,Spring,2026,2026-08-30,,,,,,National Programming Contest,Champion,,automatic,,
-Ayesha Rahman,Outstanding Achievement Award,Modern Vintage,general,,,,,Spring,2026,2026-08-30,,,,,,,,International robotics innovation,automatic,,
+recipient_name,award_category,template,achievement_type,academic_scope,study_semester,ranking_group,batch,semester,award_year,issue_date,certificate_number,article_title,journal_name,doi,publication_url,q1_verified,competition_or_event,position_or_award,achievement_area,coordination_period,citation_mode,custom_citation
+Nusrat Jahan,Academic Excellence Award,PUB Classic Blue,,semester,4th Semester,,,Spring,2026,2026-08-30,,,,,,,,,,,automatic,
+Mahmud Hasan,Research Excellence Award,Modern Vintage,,,,,,Spring,2026,2026-08-30,,Efficient Learning for Smart Systems,Example Computing Journal,10.0000/example,https://example.org/article,yes,,,,,automatic,
+Team Pundra,Outstanding Achievement Award,PUB Classic Blue,competition,,,,,Spring,2026,2026-08-30,,,,,,National Programming Contest,Champion,,,automatic,
+Ayesha Rahman,Outstanding Achievement Award,Modern Vintage,general,,,,,Spring,2026,2026-08-30,,,,,,,,International robotics innovation,,automatic,
+Dr. Farhana Islam,Course Coordination Excellence Award,PUB Classic Blue,,,,,,Summer,2026,2026-08-31,,,,,,,,,Spring 2025 – Summer 2026,automatic,
 ```
 
 ## Required fields by award
@@ -88,10 +89,27 @@ Ayesha Rahman,Outstanding Achievement Award,Modern Vintage,general,,,,,Spring,20
 | Academic Excellence—semester scope | `recipient_name`, `academic_scope=semester`, `study_semester`, `semester`, `award_year`, `issue_date` |
 | Academic Excellence—batch scope | `recipient_name`, `academic_scope=batch`, `batch`, `semester`, `award_year`, `issue_date` |
 | Academic Excellence—custom group | `recipient_name`, `academic_scope=custom`, `ranking_group`, `semester`, `award_year`, `issue_date` |
-| Research Excellence | `recipient_name`, `article_title`, `journal_name`, verified `q1_verified`, result term/year/date |
+| Research Excellence | `recipient_name`, `article_title`, `journal_name`, result term/year/date; `q1_verified` is optional |
 | Outstanding Achievement—competition | `recipient_name`, `achievement_type=competition`, `competition_or_event`, `position_or_award`, result term/year/date |
 | Outstanding Achievement—general | `recipient_name`, `achievement_type=general`, `achievement_area`, result term/year/date |
-| Course Coordination Excellence | `recipient_name`, `award_category=CCEA`, `field_coordination_period`, result term/year/date |
+| Course Coordination Excellence | `recipient_name`, `award_category=CCEA`, `coordination_period`, result term/year/date |
+
+## Recommended certificate wording
+
+The certificate displays one concise recognition statement after the recipient name; it does not add a second generic achievement paragraph.
+
+| Award | Automatic wording pattern |
+|---|---|
+| Academic Excellence—semester scope | `In recognition of securing First Position among all students enrolled in the {{STUDY_SEMESTER}} during the {{TERM}} {{YEAR}} academic term.` |
+| Academic Excellence—batch scope | `In recognition of securing First Position among the students of {{BATCH}} during the {{TERM}} {{YEAR}} academic term.` |
+| Academic Excellence—custom group | `In recognition of securing First Position among {{RANKING_GROUP}} during the {{TERM}} {{YEAR}} academic term.` |
+| Research Excellence—general publication | `In recognition of the publication of the research article “{{ARTICLE_TITLE}}” in {{JOURNAL_NAME}}.` |
+| Research Excellence—verified Q1 | `In recognition of the publication of the research article “{{ARTICLE_TITLE}}” in {{JOURNAL_NAME}}, a Q1-ranked journal.` |
+| Outstanding Achievement—competition | `In recognition of achieving {{POSITION_OR_AWARD}} at {{COMPETITION_OR_EVENT}}, demonstrating exceptional merit and bringing distinction to the Department of Computer Science & Engineering.` |
+| Outstanding Achievement—general | `In recognition of an extraordinary achievement in {{ACHIEVEMENT_AREA}}, bringing distinction to the Department of Computer Science & Engineering.` |
+| Course Coordination Excellence | `In recognition of dedicated service and academic leadership upon completing the appointment as Course Coordinator of the Department of Computer Science & Engineering for the period {{COORDINATION_PERIOD}}.` |
+
+Custom wording remains available for exceptional cases, but it must be a complete standalone statement because it replaces the automatic sentence.
 
 ## Accepted values and rules
 
@@ -100,9 +118,10 @@ Ayesha Rahman,Outstanding Achievement Award,Modern Vintage,general,,,,,Spring,20
 - `study_semester`: the student academic semester, such as `4th Semester`. The interface deliberately uses **Semester**, not Level.
 - `semester`: the result term used for numbering: `Spring`, `Summer`, `Fall`, or `Autumn`.
 - `template`: `Modern Vintage`, `PUB Classic Blue`, `modern-vintage`, or `pub-classic`. The former `PUST Classic Blue` and `pust-classic` values remain accepted as legacy aliases.
-- `award_category`: use the full award name, a configured custom alias, or legacy aliases `AE`, `RE`, and `OA`.
+- `award_category`: use the full award name, a configured custom alias, or short aliases `AE`, `RE`, `OA`, and `CCEA`.
 - `achievement_type`: use `competition` or `general` for Outstanding Achievement.
-- `q1_verified`: accepted true values are `yes`, `true`, `y`, `1`, and `verified`.
+- `coordination_period`: the official completed appointment period, such as `Spring 2025 – Summer 2026`.
+- `q1_verified`: optional. Accepted true values are `yes`, `true`, `y`, `1`, and `verified`; only a true value adds the Q1 claim. Leave it blank or use `no` for neutral publication wording.
 - `certificate_number`: leave blank for automatic numbering, or provide a unique value such as `CSE/SPR-2026/001`.
 - `citation_mode`: `automatic` or `custom`. If omitted, a non-empty `custom_citation` automatically selects custom mode for backward compatibility.
 - `custom_citation`: required only when `citation_mode=custom`; it replaces the recommended wording.
@@ -112,7 +131,7 @@ Ayesha Rahman,Outstanding Achievement Award,Modern Vintage,general,,,,,Spring,20
 
 ## Custom award mappings
 
-The ready-made **Course Coordination Excellence Award** mapping is included for new and existing users. It accepts `CCEA` or `Course Coordinator` in CSV files and uses `field_coordination_period` to fill `{{COORDINATION_PERIOD}}` in its recommended citation. It can be edited, disabled, or removed like any other custom mapping.
+**Course Coordination Excellence Award is a permanent official category**, so it does not need to be created or maintained in Settings. CSV files may use `CCEA`, `Course Coordinator`, or the full category name. The former `field_coordination_period` column remains accepted for backward compatibility, but new files should use `coordination_period`.
 
 1. Open **Settings → Custom award mappings**.
 2. Select **Add category**.
