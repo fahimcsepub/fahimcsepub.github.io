@@ -1,8 +1,8 @@
-site-app/node_modules/
-site-app/dist/
-site-app/.vite/
-site-app/coverage/
-site-app/tmp/
+**/node_modules/
+**/dist/
+**/.vite/
+**/coverage/
+**/tmp/
 *.tsbuildinfo
 *.log
 .DS_Store

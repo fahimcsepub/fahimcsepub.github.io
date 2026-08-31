@@ -1,61 +1,118 @@
 # PUB Dept. CSE Automations
 
-This repository is the starting point for the Department of CSE automation portal at Pundra University. Its first complete module is a privacy-first certificate generator that creates print-ready A4 landscape PDFs entirely in the browser. It supports single and CSV bulk workflows and keeps the issuance register only on the current device.
+A modular collection of browser-based tools for the Department of Computer Science & Engineering at Pundra University. Each automation lives under a functional category with its own documentation, application code, references, samples, inputs, and outputs.
 
-## Included workflows
+**Live portal:** [https://fahimcsepub.github.io/](https://fahimcsepub.github.io/)
 
-- Academic Excellence, Research Excellence, and Outstanding Achievement certificates
-- Two selectable certificate designs: **Modern Vintage** and **PUST Classic Blue**, recreated from the approved PowerPoint references
-- Reusable custom award categories with editable citation templates and CSV aliases
-- `CSE/SPR-2026/001` style semester-based numbering
-- Live export-accurate PDF preview
-- Wet-signature lines or session-only transparent signature images
-- CSV import for up to 500 recipients
-- Individual PDFs in ZIP groups, a combined PDF, and register CSV export
-- Local certificate register with search, backup, reprint, import, and conflict checks
+## Automation directory
 
-## Run locally
+| Category | Automation | Status | Inputs | Outputs |
+|---|---|---:|---|---|
+| Certificates & Awards | [Certificate Generator](automations/certificates-awards/certificate-generator/README.md) | Live | Manual form or UTF-8 CSV | PDF, combined PDF, ZIP, register CSV |
 
-Requirements: Node.js 22.13 or newer (Node.js 24 LTS is recommended).
+The [complete automation catalog](automations/README.md) groups current and future modules by departmental function.
+
+## Repository organization
+
+```text
+PUB-CSE-Automations/
+├── automations/
+│   ├── README.md
+│   └── certificates-awards/
+│       └── certificate-generator/
+│           ├── README.md
+│           ├── app/
+│           ├── references/
+│           └── samples/
+├── docs/
+│   └── ADDING_AN_AUTOMATION.md
+├── .github/workflows/
+└── README.md
+```
+
+Every module should follow the same pattern:
+
+- `README.md` — purpose, users, workflow, data format, privacy, testing, and deployment.
+- `app/` — the executable application or scripts.
+- `references/` — approved source documents, templates, or specifications.
+- `samples/` — non-sensitive example inputs and outputs.
+
+## Finding an automation
+
+1. Open the [automation catalog](automations/README.md).
+2. Find the relevant functional category.
+3. Open the module README before using its application.
+4. Review its required inputs, generated outputs, privacy rules, and operating instructions.
+
+Recommended functional categories are:
+
+- `certificates-awards`
+- `academic-records`
+- `research-publications`
+- `events-competitions`
+- `administrative-operations`
+- `reporting-analytics`
+
+## Current live module
+
+The first production module is the Certificate Generator. It supports:
+
+- Academic Excellence, Research Excellence, and Outstanding Achievement awards.
+- Modern Vintage and PUST Classic Blue templates.
+- Single-certificate and CSV bulk generation.
+- Custom award-category mappings and citation templates.
+- Automatic `CSE/SPR-2026/001` style numbering.
+- Wet-signature lines or authorized session-only signature images.
+- PDF, combined PDF, ZIP, and issuance-register exports.
+- A browser-local searchable register and reprinting.
+
+See the [Certificate Generator documentation](automations/certificates-awards/certificate-generator/README.md) for the complete CSV specification and operating procedure.
+
+## Run the current application locally
+
+Requirements: Node.js 22.13 or newer. Node.js 24 LTS is recommended.
 
 ```bash
-cd "Certificate Generation/site-app"
+cd automations/certificates-awards/certificate-generator/app
 npm install
 npm run dev
 ```
 
-Production checks:
+Production verification:
 
 ```bash
 npm run test:run
 npm run build
 ```
 
-## Publish with GitHub Pages
+## GitHub Pages deployment
 
-1. Create an empty GitHub repository with `main` as its default branch.
-2. Upload the **contents of this project folder**—including `.github`, `site-app`, `reference`, `.gitignore`, and this README—to the repository root. Do not upload `site-app/node_modules`; Git ignores it automatically.
-3. Open **Settings → Pages** in the repository.
-4. Select **GitHub Actions** as the Pages source.
-5. Push to `main` or manually run the **Deploy PUB CSE Automations** workflow from the Actions tab.
+The workflow at `.github/workflows/deploy.yml` currently deploys the Certificate Generator as the root portal application.
 
-The included workflow installs dependencies, runs the automated tests, builds the app, and publishes it. The Vite build uses relative paths and includes `.nojekyll`, so it works on both account-level and repository-level GitHub Pages sites.
+On every push to `main`, GitHub Actions:
 
-Both approved PowerPoint files are retained only as design references under `reference/`. The live app uses aligned artwork from `site-app/public/assets/`; users do not need PowerPoint to generate certificates. Select the design from **Generate → Certificate template**. Bulk CSV files can use the `template` column; accepted values include `Modern Vintage`, `Pust Classic`, `modern-vintage`, and `pust-classic`.
+1. Installs dependencies.
+2. Runs automated tests.
+3. Builds the selected production application.
+4. Publishes the result to GitHub Pages.
 
-### Optional Git command workflow
+When a multi-module portal is introduced later, change the workflow build path to the portal application and expose each automation through its own route or navigation entry.
 
-```bash
-git init
-git add .
-git commit -m "Initial PUB CSE automations certificate generator"
-git branch -M main
-git remote add origin https://github.com/USERNAME/REPOSITORY.git
-git push -u origin main
+## Adding another automation
+
+Do not place new tools at the repository root. Add each one under an appropriate category:
+
+```text
+automations/<category>/<automation-name>/
 ```
 
-Future department tools can be added as additional modules without changing the certificate records or PDF renderer.
+Then add it to both the root automation directory and `automations/README.md`. Follow the full [automation contribution guide](docs/ADDING_AN_AUTOMATION.md).
 
 ## Privacy and official use
 
-No recipient data, signature image, or PDF is sent to a server. Browser storage can be cleared by the user or browser, so export the issuance register regularly. Upload only signatures that the relevant authority has approved for digital use; signature files are never saved by the app.
+- Do not commit student records, private CSV files, real signature images, credentials, or generated issuance registers.
+- Keep sample data fictional and non-sensitive.
+- Document whether an automation operates locally or transmits data externally.
+- Require authorization before embedding or using an official digital signature.
+- Back up browser-local records when a module stores data only on the current device.
+

@@ -19,21 +19,21 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: site-app
+        working-directory: automations/certificates-awards/certificate-generator/app
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: site-app/package-lock.json
+          cache-dependency-path: automations/certificates-awards/certificate-generator/app/package-lock.json
       - run: npm ci
       - run: npm run test:run
       - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site-app/dist
+          path: automations/certificates-awards/certificate-generator/app/dist
 
   deploy:
     environment:
