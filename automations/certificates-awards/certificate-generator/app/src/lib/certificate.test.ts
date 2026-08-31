@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_SETTINGS,
+  COURSE_COORDINATION_AWARD_MAPPING,
+  addCourseCoordinationPreset,
   emptyRecord,
   formatCertificateNumber,
   generateCitation,
@@ -16,6 +18,33 @@ describe('certificate conventions', () => {
   it('uses PUB Classic Blue as the official default template', () => {
     expect(DEFAULT_SETTINGS.defaultTemplateId).toBe('pub-classic');
     expect(emptyRecord(DEFAULT_SETTINGS).templateId).toBe('pub-classic');
+  });
+
+  it('ships the Course Coordination award as a ready-made custom mapping', () => {
+    const mapping = DEFAULT_SETTINGS.customAwardMappings.find((candidate) => candidate.id === COURSE_COORDINATION_AWARD_MAPPING.id);
+    expect(mapping?.fields[0].key).toBe('coordination_period');
+    expect(normalizeCategory('Course Coordinator')).toBe('custom:course-coordination');
+    const record = {
+      ...emptyRecord(DEFAULT_SETTINGS),
+      recipientName: 'Dr. Ayesha Rahman',
+      awardCategory: 'custom:course-coordination' as const,
+      awardYear: '2026',
+      certificateNumber: 'CSE/SUM-2026/001',
+      customFields: { coordination_period: 'Spring 2025 – Summer 2026' },
+      customCategoryLabel: mapping?.label,
+      customCategoryTemplate: mapping?.citationTemplate,
+      customCategoryFields: mapping?.fields,
+    };
+    expect(generateCitation(record)).toContain('Course Coordinator');
+    expect(generateCitation(record)).toContain('Spring 2025 – Summer 2026');
+    expect(validateRecord(record)).toEqual([]);
+  });
+
+  it('adds the Course Coordination preset once during settings migration', () => {
+    const migrated = addCourseCoordinationPreset([]);
+    expect(migrated).toHaveLength(1);
+    expect(addCourseCoordinationPreset(migrated)).toHaveLength(1);
+    expect(addCourseCoordinationPreset([{ ...COURSE_COORDINATION_AWARD_MAPPING, id: 'custom:existing-demo' }])).toHaveLength(1);
   });
 
   it('uses term-based numbering without award abbreviations', () => {

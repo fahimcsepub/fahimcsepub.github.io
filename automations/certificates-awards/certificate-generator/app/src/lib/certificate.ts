@@ -42,6 +42,42 @@ export const CERTIFICATE_TEMPLATES: Array<{
   },
 ];
 
+export const COURSE_COORDINATION_AWARD_MAPPING: CustomAwardMapping = {
+  id: 'custom:course-coordination',
+  label: 'Course Coordination Excellence Award',
+  aliases: ['CCEA', 'Course Coordinator'],
+  description: 'Recognizes a faculty member who successfully completed an appointed period as Course Coordinator of the Department of CSE.',
+  enabled: true,
+  fields: [{
+    key: 'coordination_period',
+    label: 'Coordination period',
+    type: 'text',
+    required: true,
+    placeholder: 'e.g. Spring 2025 – Summer 2026',
+    helpText: 'Enter the official beginning and ending academic terms.',
+    options: [],
+  }],
+  citationTemplate: 'For successfully completing the appointed term as Course Coordinator of the Department of Computer Science & Engineering during {{COORDINATION_PERIOD}}, in recognition of dedicated service, academic leadership, and valuable contributions to the department.',
+};
+
+function cloneCustomAwardMapping(mapping: CustomAwardMapping): CustomAwardMapping {
+  return {
+    ...mapping,
+    aliases: [...mapping.aliases],
+    fields: mapping.fields.map((field) => ({ ...field, options: [...field.options] })),
+  };
+}
+
+export function addCourseCoordinationPreset(mappings: CustomAwardMapping[]): CustomAwardMapping[] {
+  const presetLabel = COURSE_COORDINATION_AWARD_MAPPING.label.toLowerCase();
+  const alreadyPresent = mappings.some((mapping) => (
+    mapping.id === COURSE_COORDINATION_AWARD_MAPPING.id
+    || mapping.label.trim().toLowerCase() === presetLabel
+    || mapping.aliases.some((alias) => alias.trim().toLowerCase() === 'course coordinator')
+  ));
+  return alreadyPresent ? mappings : [...mappings, cloneCustomAwardMapping(COURSE_COORDINATION_AWARD_MAPPING)];
+}
+
 export const DEFAULT_SETTINGS: GeneratorSettings = {
   universityName: 'Pundra University of Science & Technology',
   departmentName: 'Department of Computer Science & Engineering',
@@ -52,7 +88,7 @@ export const DEFAULT_SETTINGS: GeneratorSettings = {
   defaultSignatureMode: 'wet',
   defaultSignatureLayout: 'two',
   defaultTemplateId: 'pub-classic',
-  customAwardMappings: [],
+  customAwardMappings: [cloneCustomAwardMapping(COURSE_COORDINATION_AWARD_MAPPING)],
 };
 
 export const CUSTOM_TEMPLATE_TOKENS = [
