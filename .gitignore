@@ -1,0 +1,9 @@
+site-app/node_modules/
+site-app/dist/
+site-app/.vite/
+site-app/coverage/
+site-app/tmp/
+*.tsbuildinfo
+*.log
+.DS_Store
+Thumbs.db
