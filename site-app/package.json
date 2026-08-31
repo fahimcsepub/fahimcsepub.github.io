@@ -39,7 +39,6 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@rolldown/binding-win32-x64-msvc": "^1.0.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.6",
@@ -51,5 +50,8 @@
     "typescript": "5.9.3",
     "vite": "8.0.13",
     "vitest": "^4.1.11"
+  },
+  "optionalDependencies": {
+    "@rolldown/binding-win32-x64-msvc": "^1.0.1"
   }
 }
