@@ -36,7 +36,7 @@ describe('PDF generation', () => {
     const record = {
       ...emptyRecord(DEFAULT_SETTINGS),
       recipientName: 'Nusrat Jahan',
-      batch: '12',
+      studySemester: '4th Semester',
       awardYear: '2026',
       issueDate: '2026-08-30',
       certificateNumber: 'CSE/SPR-2026/001',
@@ -63,7 +63,7 @@ describe('PDF generation', () => {
       ...emptyRecord(DEFAULT_SETTINGS),
       templateId: 'pub-classic' as const,
       recipientName: 'Md. Forhan Shahriar',
-      batch: '27',
+      studySemester: '6th Semester',
       awardYear: '2024',
       issueDate: '2024-12-30',
       certificateNumber: 'CSE/SPR-2024/001',
@@ -90,12 +90,13 @@ describe('PDF generation', () => {
     const baseRecord = {
       ...emptyRecord(DEFAULT_SETTINGS),
       recipientName: 'Ankar Kumar Saha',
-      batch: '12',
+      studySemester: '5th Semester',
       semester: 'Summer' as const,
       awardYear: '2026',
       issueDate: '2026-08-31',
       certificateNumber: 'CSE/SUM-2026/002',
       signatureLayout: 'one' as const,
+      citationMode: 'custom' as const,
       customCitation: 'For an exceptional achievement in Academic Duty, bringing distinction to the Department of Computer Science & Engineering.',
     };
     const previews = await Promise.all((['pub-classic', 'modern-vintage'] as const).map(async (templateId) => ({

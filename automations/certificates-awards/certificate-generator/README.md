@@ -43,6 +43,9 @@ recipient_name
 award_category
 template
 achievement_type
+academic_scope
+study_semester
+ranking_group
 batch
 semester
 award_year
@@ -56,44 +59,50 @@ q1_verified
 competition_or_event
 position_or_award
 achievement_area
+citation_mode
 custom_citation
 ```
 
 Exact header row:
 
 ```csv
-recipient_name,award_category,template,achievement_type,batch,semester,award_year,issue_date,certificate_number,article_title,journal_name,doi,publication_url,q1_verified,competition_or_event,position_or_award,achievement_area,custom_citation
+recipient_name,award_category,template,achievement_type,academic_scope,study_semester,ranking_group,batch,semester,award_year,issue_date,certificate_number,article_title,journal_name,doi,publication_url,q1_verified,competition_or_event,position_or_award,achievement_area,citation_mode,custom_citation
 ```
 
 ## Mixed-category CSV example
 
 ```csv
-recipient_name,award_category,template,achievement_type,batch,semester,award_year,issue_date,certificate_number,article_title,journal_name,doi,publication_url,q1_verified,competition_or_event,position_or_award,achievement_area,custom_citation
-Nusrat Jahan,Academic Excellence Award,PUB Classic Blue,,12,Spring,2026,2026-08-30,,,,,,,,,,
-Mahmud Hasan,Research Excellence Award,Modern Vintage,,,Spring,2026,2026-08-30,,Efficient Learning for Smart Systems,Example Computing Journal,10.0000/example,https://example.org/article,yes,,,,
-Team Pundra,Outstanding Achievement Award,PUB Classic Blue,competition,,Spring,2026,2026-08-30,,,,,,,National Programming Contest,Champion,,
-Ayesha Rahman,Outstanding Achievement Award,Modern Vintage,general,,Spring,2026,2026-08-30,,,,,,,,,International robotics innovation,
+recipient_name,award_category,template,achievement_type,academic_scope,study_semester,ranking_group,batch,semester,award_year,issue_date,certificate_number,article_title,journal_name,doi,publication_url,q1_verified,competition_or_event,position_or_award,achievement_area,citation_mode,custom_citation
+Nusrat Jahan,Academic Excellence Award,PUB Classic Blue,,semester,4th Semester,,,Spring,2026,2026-08-30,,,,,,,,,,automatic,
+Mahmud Hasan,Research Excellence Award,Modern Vintage,,,,,,Spring,2026,2026-08-30,,Efficient Learning for Smart Systems,Example Computing Journal,10.0000/example,https://example.org/article,yes,,,,automatic,
+Team Pundra,Outstanding Achievement Award,PUB Classic Blue,competition,,,,,Spring,2026,2026-08-30,,,,,,National Programming Contest,Champion,,automatic,
+Ayesha Rahman,Outstanding Achievement Award,Modern Vintage,general,,,,,Spring,2026,2026-08-30,,,,,,,,International robotics innovation,automatic,
 ```
 
 ## Required fields by award
 
 | Award | Required category-specific data |
 |---|---|
-| Academic Excellence | `recipient_name`, `batch`, `semester`, `award_year`, `issue_date` |
-| Research Excellence | `recipient_name`, `article_title`, `journal_name`, verified `q1_verified`, semester/year/date |
-| Outstanding Achievement—competition | `recipient_name`, `achievement_type=competition`, `competition_or_event`, `position_or_award`, semester/year/date |
-| Outstanding Achievement—general | `recipient_name`, `achievement_type=general`, `achievement_area`, semester/year/date |
+| Academic Excellence—semester scope | `recipient_name`, `academic_scope=semester`, `study_semester`, `semester`, `award_year`, `issue_date` |
+| Academic Excellence—batch scope | `recipient_name`, `academic_scope=batch`, `batch`, `semester`, `award_year`, `issue_date` |
+| Academic Excellence—custom group | `recipient_name`, `academic_scope=custom`, `ranking_group`, `semester`, `award_year`, `issue_date` |
+| Research Excellence | `recipient_name`, `article_title`, `journal_name`, verified `q1_verified`, result term/year/date |
+| Outstanding Achievement—competition | `recipient_name`, `achievement_type=competition`, `competition_or_event`, `position_or_award`, result term/year/date |
+| Outstanding Achievement—general | `recipient_name`, `achievement_type=general`, `achievement_area`, result term/year/date |
 
 ## Accepted values and rules
 
 - `issue_date`: use `YYYY-MM-DD`.
-- `semester`: `Spring`, `Summer`, `Fall`, or `Autumn`.
+- `academic_scope`: `semester` (default), `batch`, or `custom`.
+- `study_semester`: the student academic semester, such as `4th Semester`. The interface deliberately uses **Semester**, not Level.
+- `semester`: the result term used for numbering: `Spring`, `Summer`, `Fall`, or `Autumn`.
 - `template`: `Modern Vintage`, `PUB Classic Blue`, `modern-vintage`, or `pub-classic`. The former `PUST Classic Blue` and `pust-classic` values remain accepted as legacy aliases.
 - `award_category`: use the full award name, a configured custom alias, or legacy aliases `AE`, `RE`, and `OA`.
 - `achievement_type`: use `competition` or `general` for Outstanding Achievement.
 - `q1_verified`: accepted true values are `yes`, `true`, `y`, `1`, and `verified`.
 - `certificate_number`: leave blank for automatic numbering, or provide a unique value such as `CSE/SPR-2026/001`.
-- `custom_citation`: optional; when present, it replaces the automatically generated citation.
+- `citation_mode`: `automatic` or `custom`. If omitted, a non-empty `custom_citation` automatically selects custom mode for backward compatibility.
+- `custom_citation`: required only when `citation_mode=custom`; it replaces the recommended wording.
 - Text containing commas or line breaks must be enclosed in double quotation marks.
 - Duplicate recipient names are allowed when certificate numbers differ.
 - Maximum import size is 500 rows.
@@ -102,11 +111,13 @@ Ayesha Rahman,Outstanding Achievement Award,Modern Vintage,general,,Spring,2026,
 
 1. Open **Settings → Custom award mappings**.
 2. Select **Add category**.
-3. Enter the category name, optional CSV aliases, and default citation template.
-4. Save the settings in the current browser.
-5. Use the category name or one of its aliases in the CSV `award_category` column.
+3. Enter the category name, description, optional CSV aliases, and whether the mapping is available for new certificates.
+4. Add, remove, or reorder the input fields. Each field has a key, label, input type, required setting, help text, and optional dropdown choices.
+5. Build the default citation with the common fields and the generated custom field tokens.
+6. Use the category name or one of its aliases in the CSV `award_category` column.
+7. Supply custom field values in columns named `field_<key>`, such as `field_project_title`.
 
-Available citation placeholders include recipient and award fields displayed in Settings. An individual row can still override the mapping through `custom_citation`.
+Available citation placeholders include recipient, award, academic semester, result term, year, research, achievement, date, and custom mapping fields displayed in Settings. An individual certificate or CSV row can switch explicitly between recommended and custom citation wording. Disabling a mapping hides it from new certificates without invalidating its saved register records.
 
 ## Numbering
 

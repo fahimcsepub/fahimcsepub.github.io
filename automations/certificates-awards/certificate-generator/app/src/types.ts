@@ -2,14 +2,31 @@ export type BuiltInAwardCategory = 'academic' | 'research' | 'outstanding';
 export type AwardCategory = BuiltInAwardCategory | `custom:${string}`;
 export type AchievementType = 'competition' | 'general';
 export type Semester = 'Spring' | 'Summer' | 'Fall';
+export type AcademicRankingScope = 'semester' | 'batch' | 'custom';
+export type CitationMode = 'automatic' | 'custom';
 export type SignatureMode = 'wet' | 'digital';
 export type SignatureLayout = 'one' | 'two';
 export type CertificateTemplateId = 'modern-vintage' | 'pub-classic';
+
+export type CustomAwardFieldType = 'text' | 'textarea' | 'number' | 'date' | 'select';
+
+export interface CustomAwardField {
+  key: string;
+  label: string;
+  type: CustomAwardFieldType;
+  required: boolean;
+  placeholder: string;
+  helpText: string;
+  options: string[];
+}
 
 export interface CustomAwardMapping {
   id: `custom:${string}`;
   label: string;
   aliases: string[];
+  description: string;
+  enabled: boolean;
+  fields: CustomAwardField[];
   citationTemplate: string;
 }
 
@@ -18,6 +35,9 @@ export interface CertificateRecord {
   recipientName: string;
   awardCategory: AwardCategory;
   achievementType: AchievementType;
+  academicScope: AcademicRankingScope;
+  studySemester: string;
+  rankingGroup: string;
   batch: string;
   semester: Semester;
   awardYear: string;
@@ -31,9 +51,12 @@ export interface CertificateRecord {
   competitionOrEvent: string;
   positionOrAward: string;
   achievementArea: string;
+  citationMode: CitationMode;
   customCitation: string;
+  customFields: Record<string, string>;
   customCategoryLabel?: string;
   customCategoryTemplate?: string;
+  customCategoryFields?: CustomAwardField[];
   signatureMode: SignatureMode;
   signatureLayout: SignatureLayout;
 }

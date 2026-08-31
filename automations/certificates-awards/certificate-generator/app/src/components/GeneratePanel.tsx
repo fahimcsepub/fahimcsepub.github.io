@@ -2,6 +2,7 @@ import { Check, Download, RotateCcw, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type {
   CertificateRecord,
+  CustomAwardField,
   GeneratorSettings,
   RegisterEntry,
   SessionSignatures,
@@ -15,6 +16,7 @@ import {
   getAwardOptions,
   getCategoryLabel,
   getCustomAwardMapping,
+  getCustomFieldsForRecord,
   isCustomCategory,
   safeFilename,
   validateRecord,
@@ -74,7 +76,8 @@ export function GeneratePanel({
     if (duplicate) current.push('Certificate number already exists in the issuance register.');
     return [...new Set(current)];
   }, [duplicate, record, settings]);
-  const automaticCitation = useMemo(() => generateCitation({ ...record, customCitation: '' }, settings), [record, settings]);
+  const automaticCitation = useMemo(() => generateCitation({ ...record, citationMode: 'automatic', customCitation: '' }, settings), [record, settings]);
+  const customFields = useMemo(() => getCustomFieldsForRecord(record, settings), [record, settings]);
   const awardOptions = useMemo(() => {
     const options = getAwardOptions(settings);
     if (!options.some((option) => option.id === record.awardCategory)) {
@@ -88,9 +91,25 @@ export function GeneratePanel({
     setRecord({
       ...record,
       awardCategory: category,
+      citationMode: 'automatic',
       customCitation: '',
+      customFields: Object.fromEntries((mapping?.fields ?? []).map((field) => [field.key, ''])),
       customCategoryLabel: mapping?.label ?? '',
       customCategoryTemplate: mapping?.citationTemplate ?? '',
+      customCategoryFields: mapping?.fields ?? [],
+    });
+    setMessage(undefined);
+  }
+
+  function updateCustomField(key: string, value: string) {
+    update('customFields', { ...record.customFields, [key]: value });
+  }
+
+  function setCitationMode(mode: CertificateRecord['citationMode']) {
+    setRecord({
+      ...record,
+      citationMode: mode,
+      customCitation: mode === 'custom' && !record.customCitation.trim() ? automaticCitation : record.customCitation,
     });
     setMessage(undefined);
   }
@@ -168,9 +187,33 @@ export function GeneratePanel({
         </Field>
 
         {record.awardCategory === 'academic' && (
-          <Field label="Batch">
-            <Input value={record.batch} onChange={(event) => update('batch', event.target.value)} placeholder="e.g. 12" />
-          </Field>
+          <div className="dynamic-fields">
+            <Field label="Ranking scope" hint="Choose the complete student group among whom First Position was determined.">
+              <Select value={record.academicScope} onChange={(event) => update('academicScope', event.target.value as CertificateRecord['academicScope'])}>
+                <option value="semester">All students of an academic semester</option>
+                <option value="batch">Students of a specific batch</option>
+                <option value="custom">A custom student group</option>
+              </Select>
+            </Field>
+            {record.academicScope === 'semester' && (
+              <Field label="Academic semester" hint="Use Semester wording, such as 4th Semester. This is separate from the Spring/Summer/Fall result term.">
+                <Input list="academic-semesters" value={record.studySemester} onChange={(event) => update('studySemester', event.target.value)} placeholder="e.g. 4th Semester" />
+              </Field>
+            )}
+            {record.academicScope === 'batch' && (
+              <Field label="Batch or cohort" hint="Useful only when the approved ranking was limited to one batch.">
+                <Input value={record.batch} onChange={(event) => update('batch', event.target.value)} placeholder="e.g. HSC Batch 12" />
+              </Field>
+            )}
+            {record.academicScope === 'custom' && (
+              <Field label="Student group" hint="Write the exact group that should appear in the citation.">
+                <Input value={record.rankingGroup} onChange={(event) => update('rankingGroup', event.target.value)} placeholder="e.g. all graduating students" />
+              </Field>
+            )}
+            <datalist id="academic-semesters">
+              {['1st Semester', '2nd Semester', '3rd Semester', '4th Semester', '5th Semester', '6th Semester', '7th Semester', '8th Semester'].map((value) => <option key={value} value={value} />)}
+            </datalist>
+          </div>
         )}
 
         {record.awardCategory === 'research' && (
@@ -209,17 +252,20 @@ export function GeneratePanel({
 
         {isCustomCategory(record.awardCategory) && (
           <div className="dynamic-fields">
-            <Field label="Achievement details" hint="Used when the mapping includes {{ACHIEVEMENT_AREA}}.">
-              <Input value={record.achievementArea} onChange={(event) => update('achievementArea', event.target.value)} placeholder="Describe the recognized achievement" />
-            </Field>
-            <Field label="Batch" hint="Optional unless the mapping includes {{BATCH}}.">
-              <Input value={record.batch} onChange={(event) => update('batch', event.target.value)} placeholder="e.g. 12" />
-            </Field>
+            {customFields.map((field) => (
+              <CustomMappingField key={field.key} field={field} value={record.customFields[field.key] ?? ''} onChange={(value) => updateCustomField(field.key, value)} />
+            ))}
+            {customFields.length === 0 && (record.customCategoryTemplate ?? '').includes('{{ACHIEVEMENT_AREA}}') && (
+              <Field label="Achievement details"><Input value={record.achievementArea} onChange={(event) => update('achievementArea', event.target.value)} placeholder="Describe the recognized achievement" /></Field>
+            )}
+            {customFields.length === 0 && (record.customCategoryTemplate ?? '').includes('{{BATCH}}') && (
+              <Field label="Batch"><Input value={record.batch} onChange={(event) => update('batch', event.target.value)} placeholder="e.g. HSC Batch 12" /></Field>
+            )}
           </div>
         )}
 
         <div className="field-grid three">
-          <Field label="Semester">
+          <Field label="Result term" hint="Used in the certificate number and award citation.">
             <Select value={record.semester} onChange={(event) => update('semester', event.target.value as CertificateRecord['semester'])}>
               <option>Spring</option><option>Summer</option><option>Fall</option>
             </Select>
@@ -235,10 +281,22 @@ export function GeneratePanel({
           </div>
         </Field>
 
-        <Field label="Achievement citation" hint={`${(record.customCitation || automaticCitation).length}/380 characters · leave the custom version empty to use automatic wording.`}>
-          <Textarea rows={4} value={record.customCitation || automaticCitation} onChange={(event) => update('customCitation', event.target.value)} />
-        </Field>
-        {record.customCitation && <button className="text-button" onClick={() => update('customCitation', '')}><Sparkles size={14} /> Restore automatic citation</button>}
+        <div className="field citation-section">
+          <span className="field-label">Achievement citation</span>
+          <div className="citation-mode-toggle" role="radiogroup" aria-label="Achievement citation mode">
+            <button type="button" role="radio" aria-checked={record.citationMode === 'automatic'} className={record.citationMode === 'automatic' ? 'active' : ''} onClick={() => setCitationMode('automatic')}><Sparkles size={14} /> Recommended wording</button>
+            <button type="button" role="radio" aria-checked={record.citationMode === 'custom'} className={record.citationMode === 'custom' ? 'active' : ''} onClick={() => setCitationMode('custom')}>Custom wording</button>
+          </div>
+          <Textarea
+            rows={4}
+            readOnly={record.citationMode === 'automatic'}
+            value={record.citationMode === 'custom' ? record.customCitation : automaticCitation}
+            onChange={(event) => update('customCitation', event.target.value)}
+            aria-label="Achievement citation text"
+          />
+          <span className="field-message">{(record.citationMode === 'custom' ? record.customCitation : automaticCitation).length}/380 characters · automatic wording stays synchronized with the award details.</span>
+          {record.citationMode === 'custom' && <button type="button" className="text-button" onClick={() => update('customCitation', automaticCitation)}><Sparkles size={14} /> Restore recommended wording</button>}
+        </div>
 
         <div className="field-grid">
           <Field label="Signature method">
@@ -265,4 +323,30 @@ export function GeneratePanel({
       <CertificatePreview record={record} settings={settings} signatures={signatures} />
     </div>
   );
+}
+
+function CustomMappingField({
+  field,
+  value,
+  onChange,
+}: {
+  field: CustomAwardField;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const label = `${field.label}${field.required ? ' *' : ''}`;
+  if (field.type === 'textarea') {
+    return <Field label={label} hint={field.helpText || undefined}><Textarea rows={3} value={value} placeholder={field.placeholder} onChange={(event) => onChange(event.target.value)} /></Field>;
+  }
+  if (field.type === 'select') {
+    return (
+      <Field label={label} hint={field.helpText || undefined}>
+        <Select value={value} onChange={(event) => onChange(event.target.value)}>
+          <option value="">Select an option</option>
+          {field.options.map((option) => <option key={option} value={option}>{option}</option>)}
+        </Select>
+      </Field>
+    );
+  }
+  return <Field label={label} hint={field.helpText || undefined}><Input type={field.type} value={value} placeholder={field.placeholder} onChange={(event) => onChange(event.target.value)} /></Field>;
 }

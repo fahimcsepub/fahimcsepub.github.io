@@ -56,7 +56,7 @@ export function RegisterPanel({
     const needle = search.trim().toLowerCase();
     return entries.filter((entry) => {
       const matchesCategory = category === 'all' || entry.awardCategory === category;
-      const matchesSearch = !needle || `${entry.recipientName} ${entry.certificateNumber} ${entry.batch}`.toLowerCase().includes(needle);
+      const matchesSearch = !needle || `${entry.recipientName} ${entry.certificateNumber} ${entry.studySemester} ${entry.batch} ${entry.rankingGroup}`.toLowerCase().includes(needle);
       return matchesCategory && matchesSearch;
     });
   }, [category, entries, search]);
@@ -135,7 +135,7 @@ export function RegisterPanel({
       </div>
 
       <div className="register-toolbar">
-        <div className="search-control"><Search size={17} /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, number, or batch" /></div>
+        <div className="search-control"><Search size={17} /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, number, semester, or batch" /></div>
         <Select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Filter by award category">
           <option value="all">All award categories</option>
           {awardOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
@@ -149,13 +149,13 @@ export function RegisterPanel({
       ) : (
         <div className="table-wrap">
           <table className="data-table register-table">
-            <thead><tr><th><span className="sr-only">Select</span></th><th>Certificate</th><th>Recipient</th><th>Award</th><th>Template</th><th>Term</th><th>Issued</th><th>Reprints</th><th>Actions</th></tr></thead>
+            <thead><tr><th><span className="sr-only">Select</span></th><th>Certificate</th><th>Recipient</th><th>Award</th><th>Template</th><th>Result term</th><th>Issued</th><th>Reprints</th><th>Actions</th></tr></thead>
             <tbody>
               {filtered.map((entry) => (
                 <tr key={entry.certificateNumber}>
                   <td><input type="checkbox" aria-label={`Select ${entry.certificateNumber}`} checked={selected.has(entry.certificateNumber)} onChange={() => toggle(entry.certificateNumber)} /></td>
                   <td><code>{entry.certificateNumber}</code></td>
-                  <td><strong>{entry.recipientName}</strong>{entry.batch && <small>Batch {entry.batch}</small>}</td>
+                  <td><strong>{entry.recipientName}</strong>{entry.studySemester && <small>{entry.studySemester}</small>}{entry.batch && <small>{entry.batch}</small>}</td>
                   <td>{getCategoryLabel(entry, settings)}</td>
                   <td>{getTemplateLabel(entry.templateId)}</td>
                   <td>{entry.semester} {entry.awardYear}</td>
