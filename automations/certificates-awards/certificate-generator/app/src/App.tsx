@@ -15,7 +15,13 @@ import '@fontsource/source-sans-3/latin-700.css';
 import '@fontsource/noto-serif-bengali/bengali-400.css';
 import '@fontsource/noto-serif-bengali/bengali-700.css';
 import type { GeneratorSettings, RegisterEntry, SessionSignatures } from './types';
-import { DEFAULT_SETTINGS, emptyRecord, getRecordTemplateId, normalizeTemplateId } from './lib/certificate';
+import {
+  DEFAULT_SETTINGS,
+  emptyRecord,
+  normalizeCertificateRecord,
+  normalizeCustomAwardMappings,
+  normalizeTemplateId,
+} from './lib/certificate';
 import { getRegister, putRegisterEntry } from './lib/register';
 import { GeneratePanel } from './components/GeneratePanel';
 
@@ -34,7 +40,7 @@ function loadSettings(): GeneratorSettings {
       ...DEFAULT_SETTINGS,
       ...parsed,
       defaultTemplateId: normalizeTemplateId(parsed.defaultTemplateId) ?? DEFAULT_SETTINGS.defaultTemplateId,
-      customAwardMappings: Array.isArray(parsed.customAwardMappings) ? parsed.customAwardMappings : [],
+      customAwardMappings: normalizeCustomAwardMappings(parsed.customAwardMappings),
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -76,7 +82,7 @@ export default function App() {
 
   function editEntry(entry: RegisterEntry) {
     const { citation: _citation, generatedAt: _generatedAt, lastGeneratedAt: _lastGeneratedAt, reprintCount: _reprintCount, ...record } = entry;
-    setDraft({ ...record, templateId: getRecordTemplateId(record) });
+    setDraft(normalizeCertificateRecord(record, settings));
     setEditingNumber(entry.certificateNumber);
     setActiveTab('generate');
   }

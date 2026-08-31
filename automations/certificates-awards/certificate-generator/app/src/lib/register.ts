@@ -1,6 +1,10 @@
 import { openDB, type DBSchema } from 'idb';
 import type { RegisterEntry } from '../types';
-import { parseCertificateNumber } from './certificate';
+import { normalizeCertificateRecord, parseCertificateNumber } from './certificate';
+
+function normalizeRegisterEntry(entry: RegisterEntry): RegisterEntry {
+  return { ...entry, ...normalizeCertificateRecord(entry) };
+}
 
 interface CertificateDatabase extends DBSchema {
   certificates: {
@@ -24,22 +28,23 @@ const dbPromise = openDB<CertificateDatabase>('cse-certificate-register', 1, {
 export async function getRegister(): Promise<RegisterEntry[]> {
   const database = await dbPromise;
   const entries = await database.getAll('certificates');
-  return entries.sort((a, b) => b.generatedAt.localeCompare(a.generatedAt));
+  return entries.map(normalizeRegisterEntry).sort((a, b) => b.generatedAt.localeCompare(a.generatedAt));
 }
 
 export async function getRegisterEntry(certificateNumber: string): Promise<RegisterEntry | undefined> {
-  return (await dbPromise).get('certificates', certificateNumber);
+  const entry = await (await dbPromise).get('certificates', certificateNumber);
+  return entry ? normalizeRegisterEntry(entry) : undefined;
 }
 
 export async function putRegisterEntry(entry: RegisterEntry): Promise<void> {
-  await (await dbPromise).put('certificates', entry);
+  await (await dbPromise).put('certificates', normalizeRegisterEntry(entry));
 }
 
 export async function addGeneratedEntry(entry: RegisterEntry): Promise<void> {
   const database = await dbPromise;
   const existing = await database.get('certificates', entry.certificateNumber);
   if (existing) throw new Error(`Certificate number ${entry.certificateNumber} already exists in the register.`);
-  await database.add('certificates', entry);
+  await database.add('certificates', normalizeRegisterEntry(entry));
 }
 
 export async function markReprinted(certificateNumber: string): Promise<RegisterEntry> {
@@ -47,7 +52,7 @@ export async function markReprinted(certificateNumber: string): Promise<Register
   const existing = await database.get('certificates', certificateNumber);
   if (!existing) throw new Error('The certificate could not be found in the register.');
   const updated: RegisterEntry = {
-    ...existing,
+    ...normalizeRegisterEntry(existing),
     reprintCount: existing.reprintCount + 1,
     lastGeneratedAt: new Date().toISOString(),
   };

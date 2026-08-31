@@ -10,13 +10,13 @@ import {
   XCircle,
 } from 'lucide-react';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import type { BulkRow, CertificateRecord, GeneratorSettings, RegisterEntry, SessionSignatures } from '../types';
-import { CERTIFICATE_TEMPLATES, getAwardOptions, getCategoryLabel, getCustomAwardMapping, isCustomCategory, safeFilename } from '../lib/certificate';
+import type { BulkRow, CertificateRecord, CustomAwardField, GeneratorSettings, RegisterEntry, SessionSignatures } from '../types';
+import { CERTIFICATE_TEMPLATES, generateCitation, getAwardOptions, getCategoryLabel, getCustomAwardMapping, getCustomFieldsForRecord, isCustomCategory, safeFilename } from '../lib/certificate';
 import { errorCsv, parseBulkCsv, registerCsv, revalidateBulkRows, rowsToRegisterEntries, sampleCsv } from '../lib/csv';
 import { downloadBlob } from '../lib/download';
 import { addGeneratedEntry } from '../lib/register';
 import { Button } from './ui/Button';
-import { Input, Select } from './ui/Field';
+import { Input, Select, Textarea } from './ui/Field';
 
 type OutputChoice = { zip: boolean; combined: boolean; register: boolean };
 
@@ -95,15 +95,25 @@ export function BulkPanel({
       record: {
         ...row.record,
         awardCategory: category,
+        citationMode: 'automatic',
         customCitation: '',
+        customFields: Object.fromEntries((mapping?.fields ?? []).map((field) => [field.key, ''])),
         customCategoryLabel: mapping?.label ?? '',
         customCategoryTemplate: mapping?.citationTemplate ?? '',
+        customCategoryFields: mapping?.fields ?? [],
       },
     } : row), register, settings));
   }
 
+  function updateCustomField(id: string, key: string, value: string) {
+    setRows((current) => revalidateBulkRows(current.map((row) => row.id === id ? {
+      ...row,
+      record: { ...row.record, customFields: { ...row.record.customFields, [key]: value } },
+    } : row), register, settings));
+  }
+
   function downloadSample() {
-    downloadBlob(new Blob([sampleCsv()], { type: 'text/csv;charset=utf-8' }), 'cse_certificate_import_template.csv');
+    downloadBlob(new Blob([sampleCsv(settings)], { type: 'text/csv;charset=utf-8' }), 'cse_certificate_import_template.csv');
   }
 
   function downloadErrors() {
@@ -234,7 +244,7 @@ export function BulkPanel({
 
           <div className="table-wrap">
             <table className="data-table">
-              <thead><tr><th>Row</th><th>Recipient</th><th>Category</th><th>Template</th><th>Term</th><th>Certificate number</th><th>Status</th></tr></thead>
+              <thead><tr><th>Row</th><th>Recipient</th><th>Category</th><th>Template</th><th>Result term</th><th>Certificate number</th><th>Status</th></tr></thead>
               <tbody>
                 {rows.map((row) => (
                   <Fragment key={row.id}>
@@ -251,11 +261,23 @@ export function BulkPanel({
                       <tr className="detail-row"><td colSpan={7}>
                         <div className="row-details">
                           <strong>{getCategoryLabel(row.record, settings)} details</strong>
-                          {row.record.awardCategory === 'academic' && <label>Batch<Input value={row.record.batch} onChange={(event) => updateRecord(row.id, 'batch', event.target.value)} /></label>}
+                          {row.record.awardCategory === 'academic' && <>
+                            <label>Ranking scope<Select value={row.record.academicScope} onChange={(event) => updateRecord(row.id, 'academicScope', event.target.value as CertificateRecord['academicScope'])}><option value="semester">Academic semester</option><option value="batch">Specific batch</option><option value="custom">Custom student group</option></Select></label>
+                            {row.record.academicScope === 'semester' && <label>Academic semester<Input value={row.record.studySemester} onChange={(event) => updateRecord(row.id, 'studySemester', event.target.value)} placeholder="e.g. 4th Semester" /></label>}
+                            {row.record.academicScope === 'batch' && <label>Batch or cohort<Input value={row.record.batch} onChange={(event) => updateRecord(row.id, 'batch', event.target.value)} placeholder="e.g. HSC Batch 12" /></label>}
+                            {row.record.academicScope === 'custom' && <label>Student group<Input value={row.record.rankingGroup} onChange={(event) => updateRecord(row.id, 'rankingGroup', event.target.value)} /></label>}
+                          </>}
                           {row.record.awardCategory === 'research' && <><label>Article title<Input value={row.record.articleTitle} onChange={(event) => updateRecord(row.id, 'articleTitle', event.target.value)} /></label><label>Journal<Input value={row.record.journalName} onChange={(event) => updateRecord(row.id, 'journalName', event.target.value)} /></label><label className="check-row compact"><input type="checkbox" checked={row.record.q1Verified} onChange={(event) => updateRecord(row.id, 'q1Verified', event.target.checked)} /> Q1 verified</label></>}
                           {row.record.awardCategory === 'outstanding' && <><label>Achievement type<Select value={row.record.achievementType} onChange={(event) => updateRecord(row.id, 'achievementType', event.target.value as CertificateRecord['achievementType'])}><option value="competition">Competition</option><option value="general">General</option></Select></label>{row.record.achievementType === 'competition' ? <><label>Position or award<Input value={row.record.positionOrAward} onChange={(event) => updateRecord(row.id, 'positionOrAward', event.target.value)} /></label><label>Competition or event<Input value={row.record.competitionOrEvent} onChange={(event) => updateRecord(row.id, 'competitionOrEvent', event.target.value)} /></label></> : <label>Achievement area<Input value={row.record.achievementArea} onChange={(event) => updateRecord(row.id, 'achievementArea', event.target.value)} /></label>}</>}
-                          {isCustomCategory(row.record.awardCategory) && <><label>Achievement details<Input value={row.record.achievementArea} onChange={(event) => updateRecord(row.id, 'achievementArea', event.target.value)} /></label><label>Batch (if used)<Input value={row.record.batch} onChange={(event) => updateRecord(row.id, 'batch', event.target.value)} /></label></>}
-                          <label className="span-all">Custom citation (optional)<Input value={row.record.customCitation} onChange={(event) => updateRecord(row.id, 'customCitation', event.target.value)} /></label>
+                          {isCustomCategory(row.record.awardCategory) && getCustomFieldsForRecord(row.record, settings).map((field) => <BulkCustomMappingField key={field.key} field={field} value={row.record.customFields[field.key] ?? ''} onChange={(value) => updateCustomField(row.id, field.key, value)} />)}
+                          {isCustomCategory(row.record.awardCategory) && getCustomFieldsForRecord(row.record, settings).length === 0 && (row.record.customCategoryTemplate ?? '').includes('{{ACHIEVEMENT_AREA}}') && <label>Achievement details<Input value={row.record.achievementArea} onChange={(event) => updateRecord(row.id, 'achievementArea', event.target.value)} /></label>}
+                          {isCustomCategory(row.record.awardCategory) && getCustomFieldsForRecord(row.record, settings).length === 0 && (row.record.customCategoryTemplate ?? '').includes('{{BATCH}}') && <label>Batch<Input value={row.record.batch} onChange={(event) => updateRecord(row.id, 'batch', event.target.value)} /></label>}
+                          <label>Citation mode<Select value={row.record.citationMode} onChange={(event) => {
+                            const mode = event.target.value as CertificateRecord['citationMode'];
+                            updateRecord(row.id, 'citationMode', mode);
+                            if (mode === 'custom' && !row.record.customCitation.trim()) updateRecord(row.id, 'customCitation', generateCitation({ ...row.record, citationMode: 'automatic' }, settings));
+                          }}><option value="automatic">Recommended wording</option><option value="custom">Custom wording</option></Select></label>
+                          <label className="span-all">Achievement citation<Textarea rows={3} readOnly={row.record.citationMode === 'automatic'} value={row.record.citationMode === 'custom' ? row.record.customCitation : generateCitation({ ...row.record, citationMode: 'automatic' }, settings)} onChange={(event) => updateRecord(row.id, 'customCitation', event.target.value)} /></label>
                           {row.errors.length > 0 && <ul className="row-errors">{row.errors.map((error) => <li key={error}>{error}</li>)}</ul>}
                         </div>
                       </td></tr>
@@ -287,4 +309,22 @@ export function BulkPanel({
       {message && <div className="alert" role="status">{message}</div>}
     </section>
   );
+}
+
+function BulkCustomMappingField({
+  field,
+  value,
+  onChange,
+}: {
+  field: CustomAwardField;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  if (field.type === 'select') {
+    return <label>{field.label}{field.required ? ' *' : ''}<Select value={value} onChange={(event) => onChange(event.target.value)}><option value="">Select an option</option>{field.options.map((option) => <option key={option} value={option}>{option}</option>)}</Select></label>;
+  }
+  if (field.type === 'textarea') {
+    return <label>{field.label}{field.required ? ' *' : ''}<Textarea rows={2} value={value} placeholder={field.placeholder} onChange={(event) => onChange(event.target.value)} /></label>;
+  }
+  return <label>{field.label}{field.required ? ' *' : ''}<Input type={field.type} value={value} placeholder={field.placeholder} onChange={(event) => onChange(event.target.value)} /></label>;
 }

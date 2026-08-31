@@ -4,6 +4,7 @@ import {
   emptyRecord,
   formatCertificateNumber,
   generateCitation,
+  normalizeCertificateRecord,
   normalizeCategory,
   normalizeSemester,
   normalizeTemplateId,
@@ -37,19 +38,39 @@ describe('certificate conventions', () => {
   it('creates the approved academic citation', () => {
     const record = {
       ...emptyRecord(DEFAULT_SETTINGS),
-      batch: '12',
+      studySemester: '4th Semester',
       awardYear: '2025',
       certificateNumber: 'CSE/SPR-2025/001',
     };
-    expect(generateCitation(record)).toContain('First Position among the students of Batch 12');
-    expect(generateCitation(record)).toContain('Spring 2025 Semester');
+    expect(generateCitation(record)).toContain('First Position among all students of the 4th Semester');
+    expect(generateCitation(record)).toContain('Spring 2025 academic term');
+  });
+
+  it('supports semester, batch, and custom Academic Excellence scopes', () => {
+    const base = { ...emptyRecord(DEFAULT_SETTINGS), recipientName: 'Approved Student', awardYear: '2026', certificateNumber: 'CSE/SPR-2026/001' };
+    expect(validateRecord({ ...base, studySemester: '6th Semester' })).toEqual([]);
+    expect(generateCitation({ ...base, academicScope: 'batch', batch: 'Diploma Batch 8' })).toContain('students of Diploma Batch 8');
+    expect(generateCitation({ ...base, academicScope: 'custom', rankingGroup: 'all graduating students' })).toContain('among all graduating students');
+  });
+
+  it('migrates old batch records and explicit custom citations safely', () => {
+    const migrated = normalizeCertificateRecord({
+      ...emptyRecord(DEFAULT_SETTINGS),
+      academicScope: undefined,
+      citationMode: undefined,
+      batch: '12',
+      customCitation: 'Approved historical wording.',
+    });
+    expect(migrated.academicScope).toBe('batch');
+    expect(migrated.citationMode).toBe('custom');
+    expect(generateCitation(migrated)).toBe('Approved historical wording.');
   });
 
   it('blocks placeholder text and missing Q1 verification', () => {
     const placeholder = {
       ...emptyRecord(DEFAULT_SETTINGS),
       recipientName: '{{RECIPIENT_NAME}}',
-      batch: '12',
+      studySemester: '4th Semester',
       certificateNumber: 'CSE/SPR-2026/001',
     };
     expect(validateRecord(placeholder).some((error) => error.includes('placeholder'))).toBe(true);
@@ -71,7 +92,10 @@ describe('certificate conventions', () => {
         id: 'custom:innovation' as const,
         label: 'Innovation Excellence Award',
         aliases: ['IE', 'Innovation'],
-        citationTemplate: 'For outstanding innovation in {{ACHIEVEMENT_AREA}} during {{SEMESTER}} {{YEAR}}.',
+        description: 'Recognizes applied innovation.',
+        enabled: true,
+        fields: [{ key: 'innovation_area', label: 'Innovation area', type: 'text' as const, required: true, placeholder: '', helpText: '', options: [] }],
+        citationTemplate: 'For outstanding innovation in {{INNOVATION_AREA}} during {{TERM}} {{YEAR}}.',
       }],
     };
     expect(normalizeCategory('IE', settings)).toBe('custom:innovation');
@@ -79,11 +103,12 @@ describe('certificate conventions', () => {
       ...emptyRecord(settings),
       awardCategory: 'custom:innovation' as const,
       recipientName: 'Sadia Rahman',
-      achievementArea: 'assistive computing',
+      customFields: { innovation_area: 'assistive computing' },
       awardYear: '2026',
       certificateNumber: 'CSE/SPR-2026/001',
       customCategoryLabel: 'Innovation Excellence Award',
       customCategoryTemplate: settings.customAwardMappings[0].citationTemplate,
+      customCategoryFields: settings.customAwardMappings[0].fields,
     };
     expect(generateCitation(record, settings)).toBe('For outstanding innovation in assistive computing during Spring 2026.');
     expect(validateRecord(record, settings)).toEqual([]);

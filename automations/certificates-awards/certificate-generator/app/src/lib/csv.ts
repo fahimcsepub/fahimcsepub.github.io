@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import type { BulkRow, CertificateRecord, GeneratorSettings, RegisterEntry } from '../types';
 import {
+  DEFAULT_SETTINGS,
   TERM_CODES,
   emptyRecord,
   formatCertificateNumber,
@@ -8,7 +9,9 @@ import {
   getCategoryLabel,
   getCustomAwardMapping,
   getRecordTemplateId,
+  normalizeCertificateRecord,
   normalizeCategory,
+  normalizeCustomFieldKey,
   normalizeSemester,
   normalizeTemplateId,
   parseCertificateNumber,
@@ -21,6 +24,9 @@ export const CSV_HEADERS = [
   'award_category',
   'template',
   'achievement_type',
+  'academic_scope',
+  'study_semester',
+  'ranking_group',
   'batch',
   'semester',
   'award_year',
@@ -34,6 +40,7 @@ export const CSV_HEADERS = [
   'competition_or_event',
   'position_or_award',
   'achievement_area',
+  'citation_mode',
   'custom_citation',
 ] as const;
 
@@ -49,6 +56,40 @@ function truthy(value: string | undefined): boolean {
 
 function achievementType(value: string | undefined): 'competition' | 'general' {
   return (value ?? '').trim().toLowerCase().startsWith('gen') ? 'general' : 'competition';
+}
+
+function academicScope(value: string | undefined, batch: string, studySemester: string): CertificateRecord['academicScope'] {
+  const normalized = (value ?? '').trim().toLowerCase().replace(/[_-]+/g, ' ');
+  if (['batch', 'cohort'].includes(normalized)) return 'batch';
+  if (['custom', 'group', 'custom group'].includes(normalized)) return 'custom';
+  if (['semester', 'academic semester', 'all semester students'].includes(normalized)) return 'semester';
+  if (studySemester) return 'semester';
+  return batch ? 'batch' : 'semester';
+}
+
+function citationMode(value: string | undefined, customCitation: string): CertificateRecord['citationMode'] {
+  const normalized = (value ?? '').trim().toLowerCase();
+  if (['custom', 'manual', 'override'].includes(normalized)) return 'custom';
+  if (['automatic', 'auto', 'recommended', 'default'].includes(normalized)) return 'automatic';
+  return customCitation ? 'custom' : 'automatic';
+}
+
+function customFieldsFromRaw(raw: RawRow): Record<string, string> {
+  return Object.fromEntries(Object.entries(raw).flatMap(([header, value]) => {
+    if (!header.startsWith('field_')) return [];
+    const key = normalizeCustomFieldKey(header.slice('field_'.length));
+    return key ? [[key, (value ?? '').trim()]] : [];
+  }));
+}
+
+function parseCustomCategoryFields(value: string | undefined) {
+  if (!value?.trim()) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 function serialKey(term: string, year: string): string {
@@ -70,13 +111,19 @@ function makeRecord(
   const semester = normalizeSemester(raw.semester ?? '');
   const normalizedTemplate = normalizeTemplateId(raw.template);
   const customMapping = category ? getCustomAwardMapping(category, settings) : undefined;
-  const record: CertificateRecord = {
+  const batch = (raw.batch ?? '').trim();
+  const studySemester = (raw.study_semester ?? '').trim();
+  const customCitation = (raw.custom_citation ?? '').trim();
+  const record = normalizeCertificateRecord({
     ...emptyRecord(settings),
     templateId: normalizedTemplate ?? fallbackTemplate,
     recipientName: (raw.recipient_name ?? '').trim(),
     awardCategory: category ?? 'academic',
     achievementType: achievementType(raw.achievement_type),
-    batch: (raw.batch ?? '').trim(),
+    academicScope: academicScope(raw.academic_scope, batch, studySemester),
+    studySemester,
+    rankingGroup: (raw.ranking_group ?? '').trim(),
+    batch,
     semester: semester ?? 'Spring',
     awardYear: (raw.award_year ?? '').trim(),
     issueDate: (raw.issue_date ?? '').trim(),
@@ -89,15 +136,20 @@ function makeRecord(
     competitionOrEvent: (raw.competition_or_event ?? '').trim(),
     positionOrAward: (raw.position_or_award ?? '').trim(),
     achievementArea: (raw.achievement_area ?? '').trim(),
-    customCitation: (raw.custom_citation ?? '').trim(),
+    citationMode: citationMode(raw.citation_mode, customCitation),
+    customCitation,
+    customFields: customFieldsFromRaw(raw),
     customCategoryLabel: importedCustomLabel || customMapping?.label || '',
     customCategoryTemplate: importedCustomTemplate || customMapping?.citationTemplate || '',
+    customCategoryFields: parseCustomCategoryFields(raw.custom_category_fields).length
+      ? parseCustomCategoryFields(raw.custom_category_fields)
+      : customMapping?.fields ?? [],
     signatureMode: settings.defaultSignatureMode,
     signatureLayout: settings.defaultSignatureLayout,
-  };
+  }, settings);
   const normalizationErrors: string[] = [];
   if (!category) normalizationErrors.push('Award category is not recognized.');
-  if (!semester) normalizationErrors.push('Semester is not recognized.');
+  if (!semester) normalizationErrors.push('Result term is not recognized. Use Spring, Summer, Fall, or Autumn.');
   if (raw.template?.trim() && !normalizedTemplate) normalizationErrors.push('Certificate template is not recognized.');
   return { record, normalizationErrors };
 }
@@ -159,19 +211,20 @@ export function revalidateBulkRows(rows: BulkRow[], register: RegisterEntry[], s
   });
 }
 
-export function sampleCsv(): string {
+export function sampleCsv(settings = DEFAULT_SETTINGS): string {
   const rows = [
     {
-      recipient_name: 'Nusrat Jahan', award_category: 'Academic Excellence Award', template: 'PUB Classic Blue', achievement_type: '', batch: '12', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: '', journal_name: '', doi: '', publication_url: '', q1_verified: '', competition_or_event: '', position_or_award: '', achievement_area: '', custom_citation: '',
+      recipient_name: 'Nusrat Jahan', award_category: 'Academic Excellence Award', template: 'PUB Classic Blue', achievement_type: '', academic_scope: 'semester', study_semester: '4th Semester', ranking_group: '', batch: '', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: '', journal_name: '', doi: '', publication_url: '', q1_verified: '', competition_or_event: '', position_or_award: '', achievement_area: '', citation_mode: 'automatic', custom_citation: '',
     },
     {
-      recipient_name: 'Mahmud Hasan', award_category: 'Research Excellence Award', template: 'Modern Vintage', achievement_type: '', batch: '', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: 'Efficient Learning for Smart Systems', journal_name: 'Example Computing Journal', doi: '10.0000/example', publication_url: 'https://example.org/article', q1_verified: 'yes', competition_or_event: '', position_or_award: '', achievement_area: '', custom_citation: '',
+      recipient_name: 'Mahmud Hasan', award_category: 'Research Excellence Award', template: 'Modern Vintage', achievement_type: '', academic_scope: '', study_semester: '', ranking_group: '', batch: '', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: 'Efficient Learning for Smart Systems', journal_name: 'Example Computing Journal', doi: '10.0000/example', publication_url: 'https://example.org/article', q1_verified: 'yes', competition_or_event: '', position_or_award: '', achievement_area: '', citation_mode: 'automatic', custom_citation: '',
     },
     {
-      recipient_name: 'Team Pundra', award_category: 'Outstanding Achievement Award', template: 'PUB Classic Blue', achievement_type: 'competition', batch: '', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: '', journal_name: '', doi: '', publication_url: '', q1_verified: '', competition_or_event: 'National Programming Contest', position_or_award: 'Champion', achievement_area: '', custom_citation: '',
+      recipient_name: 'Team Pundra', award_category: 'Outstanding Achievement Award', template: 'PUB Classic Blue', achievement_type: 'competition', academic_scope: '', study_semester: '', ranking_group: '', batch: '', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: '', journal_name: '', doi: '', publication_url: '', q1_verified: '', competition_or_event: 'National Programming Contest', position_or_award: 'Champion', achievement_area: '', citation_mode: 'automatic', custom_citation: '',
     },
   ];
-  return `\uFEFF${Papa.unparse(rows, { columns: [...CSV_HEADERS] })}`;
+  const customHeaders = [...new Set(settings.customAwardMappings.flatMap((mapping) => mapping.fields.map((field) => `field_${normalizeCustomFieldKey(field.key)}`)))].filter((header) => header !== 'field_');
+  return `\uFEFF${Papa.unparse(rows, { columns: [...CSV_HEADERS, ...customHeaders] })}`;
 }
 
 export function errorCsv(rows: BulkRow[]): string {
@@ -185,11 +238,15 @@ export function errorCsv(rows: BulkRow[]): string {
 }
 
 export function registerCsv(entries: RegisterEntry[], settings: GeneratorSettings): string {
+  const customKeys = [...new Set(entries.flatMap((entry) => Object.keys(entry.customFields ?? {}).map(normalizeCustomFieldKey)))].filter(Boolean).sort();
   const rows = entries.map((entry) => ({
     recipient_name: csvSafe(entry.recipientName),
     award_category: csvSafe(getCategoryLabel(entry, settings)),
     template: getRecordTemplateId(entry),
     achievement_type: entry.achievementType,
+    academic_scope: entry.academicScope,
+    study_semester: csvSafe(entry.studySemester),
+    ranking_group: csvSafe(entry.rankingGroup),
     batch: csvSafe(entry.batch),
     semester: entry.semester,
     award_year: entry.awardYear,
@@ -203,9 +260,12 @@ export function registerCsv(entries: RegisterEntry[], settings: GeneratorSetting
     competition_or_event: csvSafe(entry.competitionOrEvent),
     position_or_award: csvSafe(entry.positionOrAward),
     achievement_area: csvSafe(entry.achievementArea),
+    citation_mode: entry.citationMode,
     custom_citation: csvSafe(entry.customCitation),
+    ...Object.fromEntries(customKeys.map((key) => [`field_${key}`, csvSafe(entry.customFields?.[key] ?? '')])),
     custom_category_label: csvSafe(entry.customCategoryLabel ?? ''),
     custom_category_template: csvSafe(entry.customCategoryTemplate ?? ''),
+    custom_category_fields: csvSafe(JSON.stringify(entry.customCategoryFields ?? [])),
     citation: csvSafe(entry.citation),
     generated_at: entry.generatedAt,
     last_generated_at: entry.lastGeneratedAt,
