@@ -64,7 +64,7 @@ export function SettingsPanel({
   const mappingIssues = useMemo(() => {
     const issues: string[] = [];
     const owners = new Map<string, string>();
-    const reserved = new Set(['ae', 'academic', 'academic excellence', 'academic excellence award', 're', 'research', 'research excellence', 'research excellence award', 'oa', 'outstanding', 'outstanding achievement', 'outstanding achievement award']);
+    const reserved = new Set(['ae', 'academic', 'academic excellence', 'academic excellence award', 're', 'research', 'research excellence', 'research excellence award', 'oa', 'outstanding', 'outstanding achievement', 'outstanding achievement award', 'cc', 'ccea', 'course coordinator', 'course coordination', 'course coordinator award', 'course coordination excellence', 'course coordination excellence award']);
     const commonTokens = new Set<string>(CUSTOM_TEMPLATE_TOKENS.map((token) => token.slice(2, -2)));
     settings.customAwardMappings.forEach((mapping) => {
       if (!mapping.label.trim()) issues.push('Every custom category needs a name.');
@@ -249,7 +249,7 @@ export function SettingsPanel({
         </details>
         {mappingIssues.length > 0 && <div className="alert alert-error" role="alert"><strong>Review custom mappings</strong><ul>{mappingIssues.map((issue) => <li key={issue}>{issue}</li>)}</ul></div>}
         {settings.customAwardMappings.length === 0 ? (
-          <div className="mapping-empty">No custom mappings yet. The three official award categories remain available.</div>
+          <div className="mapping-empty">No custom mappings yet. The four official award categories remain available.</div>
         ) : (
           <div className="mapping-list">
             {settings.customAwardMappings.map((mapping, index) => (

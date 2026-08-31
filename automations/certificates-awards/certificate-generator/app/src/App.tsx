@@ -17,11 +17,11 @@ import '@fontsource/noto-serif-bengali/bengali-700.css';
 import type { GeneratorSettings, RegisterEntry, SessionSignatures } from './types';
 import {
   DEFAULT_SETTINGS,
-  addCourseCoordinationPreset,
   emptyRecord,
   normalizeCertificateRecord,
   normalizeCustomAwardMappings,
   normalizeTemplateId,
+  removeLegacyCourseCoordinationMappings,
 } from './lib/certificate';
 import { getRegister, putRegisterEntry } from './lib/register';
 import { GeneratePanel } from './components/GeneratePanel';
@@ -34,7 +34,7 @@ type AppTab = 'generate' | 'bulk' | 'register' | 'settings';
 
 const SETTINGS_STORAGE_KEY = 'cse-generator-settings';
 const SETTINGS_VERSION_KEY = 'cse-generator-settings-version';
-const SETTINGS_SCHEMA_VERSION = 2;
+const SETTINGS_SCHEMA_VERSION = 3;
 
 function loadSettings(): GeneratorSettings {
   try {
@@ -44,11 +44,9 @@ function loadSettings(): GeneratorSettings {
       return DEFAULT_SETTINGS;
     }
     const parsed = JSON.parse(saved) as Partial<GeneratorSettings>;
-    const savedVersion = Number(localStorage.getItem(SETTINGS_VERSION_KEY) ?? 0);
-    const normalizedMappings = normalizeCustomAwardMappings(parsed.customAwardMappings);
-    const customAwardMappings = savedVersion < SETTINGS_SCHEMA_VERSION
-      ? addCourseCoordinationPreset(normalizedMappings)
-      : normalizedMappings;
+    const customAwardMappings = removeLegacyCourseCoordinationMappings(
+      normalizeCustomAwardMappings(parsed.customAwardMappings),
+    );
     localStorage.setItem(SETTINGS_VERSION_KEY, String(SETTINGS_SCHEMA_VERSION));
     return {
       ...DEFAULT_SETTINGS,

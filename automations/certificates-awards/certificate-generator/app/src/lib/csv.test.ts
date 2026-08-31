@@ -5,29 +5,32 @@ import { parseBulkCsv, parseRegisterCsv, registerCsv, rowsToRegisterEntries, sam
 describe('bulk CSV import', () => {
   it('parses a mixed-category template and allocates shared serial numbers', () => {
     const template = sampleCsv();
-    expect(template).toContain('field_coordination_period');
+    expect(template).toContain('coordination_period');
     const result = parseBulkCsv(template, DEFAULT_SETTINGS, []);
     expect(result.fileErrors).toEqual([]);
-    expect(result.rows).toHaveLength(3);
+    expect(result.rows).toHaveLength(4);
     expect(result.rows.every((row) => row.errors.length === 0)).toBe(true);
-    expect(result.rows.map((row) => row.record.templateId)).toEqual(['pub-classic', 'modern-vintage', 'pub-classic']);
+    expect(result.rows.map((row) => row.record.templateId)).toEqual(['pub-classic', 'modern-vintage', 'pub-classic', 'pub-classic']);
     expect(result.rows[0].record.academicScope).toBe('semester');
     expect(result.rows[0].record.studySemester).toBe('4th Semester');
+    expect(result.rows[3].record.awardCategory).toBe('coordination');
+    expect(result.rows[3].record.coordinationPeriod).toBe('Spring 2025 – Summer 2026');
     expect(result.rows.map((row) => row.record.certificateNumber)).toEqual([
       'CSE/SPR-2026/001',
       'CSE/SPR-2026/002',
       'CSE/SPR-2026/003',
+      'CSE/SUM-2026/001',
     ]);
   });
 
-  it('imports the ready-made Course Coordinator mapping and its reusable field', () => {
+  it('imports the built-in Course Coordinator award and accepts its former field column', () => {
     const csv = [
       'recipient_name,award_category,field_coordination_period,semester,award_year,issue_date,certificate_number',
       'Dr. Ayesha Rahman,CCEA,Spring 2025 – Summer 2026,Summer,2026,2026-08-31,CSE/SUM-2026/001',
     ].join('\n');
     const result = parseBulkCsv(csv, DEFAULT_SETTINGS, []);
-    expect(result.rows[0].record.awardCategory).toBe('custom:course-coordination');
-    expect(result.rows[0].record.customFields.coordination_period).toBe('Spring 2025 – Summer 2026');
+    expect(result.rows[0].record.awardCategory).toBe('coordination');
+    expect(result.rows[0].record.coordinationPeriod).toBe('Spring 2025 – Summer 2026');
     expect(result.rows[0].errors).toEqual([]);
   });
 

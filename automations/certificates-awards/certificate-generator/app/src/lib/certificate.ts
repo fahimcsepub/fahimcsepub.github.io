@@ -17,6 +17,7 @@ export const CATEGORY_LABELS: Record<BuiltInAwardCategory, string> = {
   academic: 'Academic Excellence Award',
   research: 'Research Excellence Award',
   outstanding: 'Outstanding Achievement Award',
+  coordination: 'Course Coordination Excellence Award',
 };
 
 export const TERM_CODES: Record<Semester, string> = {
@@ -42,40 +43,15 @@ export const CERTIFICATE_TEMPLATES: Array<{
   },
 ];
 
-export const COURSE_COORDINATION_AWARD_MAPPING: CustomAwardMapping = {
-  id: 'custom:course-coordination',
-  label: 'Course Coordination Excellence Award',
-  aliases: ['CCEA', 'Course Coordinator'],
-  description: 'Recognizes a faculty member who successfully completed an appointed period as Course Coordinator of the Department of CSE.',
-  enabled: true,
-  fields: [{
-    key: 'coordination_period',
-    label: 'Coordination period',
-    type: 'text',
-    required: true,
-    placeholder: 'e.g. Spring 2025 – Summer 2026',
-    helpText: 'Enter the official beginning and ending academic terms.',
-    options: [],
-  }],
-  citationTemplate: 'For successfully completing the appointed term as Course Coordinator of the Department of Computer Science & Engineering during {{COORDINATION_PERIOD}}, in recognition of dedicated service, academic leadership, and valuable contributions to the department.',
-};
+export const COURSE_COORDINATION_CITATION = 'In recognition of dedicated service and academic leadership upon completing the appointment as Course Coordinator of the Department of Computer Science & Engineering for the period {{COORDINATION_PERIOD}}.';
 
-function cloneCustomAwardMapping(mapping: CustomAwardMapping): CustomAwardMapping {
-  return {
-    ...mapping,
-    aliases: [...mapping.aliases],
-    fields: mapping.fields.map((field) => ({ ...field, options: [...field.options] })),
-  };
-}
-
-export function addCourseCoordinationPreset(mappings: CustomAwardMapping[]): CustomAwardMapping[] {
-  const presetLabel = COURSE_COORDINATION_AWARD_MAPPING.label.toLowerCase();
-  const alreadyPresent = mappings.some((mapping) => (
-    mapping.id === COURSE_COORDINATION_AWARD_MAPPING.id
-    || mapping.label.trim().toLowerCase() === presetLabel
-    || mapping.aliases.some((alias) => alias.trim().toLowerCase() === 'course coordinator')
+export function removeLegacyCourseCoordinationMappings(mappings: CustomAwardMapping[]): CustomAwardMapping[] {
+  const officialLabel = CATEGORY_LABELS.coordination.toLowerCase();
+  return mappings.filter((mapping) => (
+    mapping.id !== 'custom:course-coordination'
+    && mapping.label.trim().toLowerCase() !== officialLabel
+    && !mapping.aliases.some((alias) => ['ccea', 'course coordinator'].includes(alias.trim().toLowerCase()))
   ));
-  return alreadyPresent ? mappings : [...mappings, cloneCustomAwardMapping(COURSE_COORDINATION_AWARD_MAPPING)];
 }
 
 export const DEFAULT_SETTINGS: GeneratorSettings = {
@@ -88,7 +64,7 @@ export const DEFAULT_SETTINGS: GeneratorSettings = {
   defaultSignatureMode: 'wet',
   defaultSignatureLayout: 'two',
   defaultTemplateId: 'pub-classic',
-  customAwardMappings: [cloneCustomAwardMapping(COURSE_COORDINATION_AWARD_MAPPING)],
+  customAwardMappings: [],
 };
 
 export const CUSTOM_TEMPLATE_TOKENS = [
@@ -105,6 +81,7 @@ export const CUSTOM_TEMPLATE_TOKENS = [
   '{{JOURNAL_NAME}}',
   '{{POSITION_OR_AWARD}}',
   '{{COMPETITION_OR_EVENT}}',
+  '{{COORDINATION_PERIOD}}',
   '{{ISSUE_DATE}}',
 ] as const;
 
@@ -185,6 +162,7 @@ export function emptyRecord(settings = DEFAULT_SETTINGS): CertificateRecord {
     competitionOrEvent: '',
     positionOrAward: '',
     achievementArea: '',
+    coordinationPeriod: '',
     citationMode: 'automatic',
     customCitation: '',
     customFields: {},
@@ -212,16 +190,24 @@ export function normalizeCertificateRecord(
   const customFields = value.customFields && typeof value.customFields === 'object' && !Array.isArray(value.customFields)
     ? Object.fromEntries(Object.entries(value.customFields).map(([key, fieldValue]) => [normalizeCustomFieldKey(key), String(fieldValue ?? '')]))
     : {};
+  const legacyCourseCoordination = value.awardCategory === 'custom:course-coordination'
+    || value.customCategoryLabel?.trim().toLowerCase() === CATEGORY_LABELS.coordination.toLowerCase();
+  const awardCategory = legacyCourseCoordination ? 'coordination' : value.awardCategory ?? defaults.awardCategory;
+  const coordinationPeriod = typeof value.coordinationPeriod === 'string' && value.coordinationPeriod.trim()
+    ? value.coordinationPeriod
+    : (awardCategory === 'coordination' ? customFields.coordination_period ?? '' : '');
   return {
     ...defaults,
     ...value,
     templateId: normalizeTemplateId(value.templateId) ?? defaults.templateId,
+    awardCategory,
     academicScope,
     studySemester: typeof value.studySemester === 'string' ? value.studySemester : '',
     rankingGroup: typeof value.rankingGroup === 'string' ? value.rankingGroup : '',
     citationMode,
     customCitation,
     customFields,
+    coordinationPeriod,
     customCategoryFields: Array.isArray(value.customCategoryFields)
       ? value.customCategoryFields.map((field, index) => normalizeCustomAwardField(field, index))
       : [],
@@ -257,6 +243,7 @@ export function normalizeCategory(value: string, settings = DEFAULT_SETTINGS): A
   if (['ae', 'academic', 'academic excellence', 'academic excellence award'].includes(normalized)) return 'academic';
   if (['re', 'research', 'research excellence', 'research excellence award'].includes(normalized)) return 'research';
   if (['oa', 'outstanding', 'outstanding achievement', 'outstanding achievement award'].includes(normalized)) return 'outstanding';
+  if (['cc', 'ccea', 'course coordinator', 'course coordination', 'course coordinator award', 'course coordination excellence', 'course coordination excellence award'].includes(normalized)) return 'coordination';
   const customMatches = settings.customAwardMappings.filter((mapping) => mapping.enabled !== false).filter((mapping) => {
     const candidates = [mapping.id, mapping.label, ...mapping.aliases]
       .map((candidate) => candidate.trim().toLowerCase().replace(/[_-]+/g, ' '));
@@ -290,6 +277,7 @@ export function getAwardOptions(settings = DEFAULT_SETTINGS): Array<{ id: AwardC
     { id: 'academic', label: CATEGORY_LABELS.academic },
     { id: 'research', label: CATEGORY_LABELS.research },
     { id: 'outstanding', label: CATEGORY_LABELS.outstanding },
+    { id: 'coordination', label: CATEGORY_LABELS.coordination },
     ...settings.customAwardMappings.filter((mapping) => mapping.enabled !== false).map((mapping) => ({ id: mapping.id, label: mapping.label })),
   ];
 }
@@ -314,6 +302,7 @@ function citationTokenValues(record: CertificateRecord, settings: GeneratorSetti
     JOURNAL_NAME: record.journalName.trim(),
     POSITION_OR_AWARD: record.positionOrAward.trim(),
     COMPETITION_OR_EVENT: record.competitionOrEvent.trim(),
+    COORDINATION_PERIOD: record.coordinationPeriod.trim(),
     ISSUE_DATE: formatDisplayDate(record.issueDate),
   };
   Object.entries(record.customFields ?? {}).forEach(([key, value]) => {
@@ -342,21 +331,25 @@ export function generateCitation(record: CertificateRecord, settings = DEFAULT_S
   if (usesCustomCitation(record)) return record.customCitation.trim();
   if (record.awardCategory === 'academic') {
     if (record.academicScope === 'batch') {
-      return `For securing First Position among the students of ${record.batch.trim()} in the ${record.semester} ${record.awardYear.trim()} academic term, in recognition of outstanding academic performance.`;
+      return `In recognition of securing First Position among the students of ${record.batch.trim()} during the ${record.semester} ${record.awardYear.trim()} academic term.`;
     }
     if (record.academicScope === 'custom') {
-      return `For securing First Position among ${record.rankingGroup.trim()} in the ${record.semester} ${record.awardYear.trim()} academic term, in recognition of outstanding academic performance.`;
+      return `In recognition of securing First Position among ${record.rankingGroup.trim()} during the ${record.semester} ${record.awardYear.trim()} academic term.`;
     }
-    return `For securing First Position among all students of the ${record.studySemester.trim()} in the ${record.semester} ${record.awardYear.trim()} academic term, in recognition of outstanding academic performance.`;
+    return `In recognition of securing First Position among all students enrolled in the ${record.studySemester.trim()} during the ${record.semester} ${record.awardYear.trim()} academic term.`;
   }
   if (record.awardCategory === 'research') {
-    return `For publishing the research article titled “${record.articleTitle.trim()}” in ${record.journalName.trim()}, a Q1-ranked journal, demonstrating excellence in scholarly research.`;
+    const ranking = record.q1Verified ? ', a Q1-ranked journal' : '';
+    return `In recognition of the publication of the research article “${record.articleTitle.trim()}” in ${record.journalName.trim()}${ranking}.`;
   }
   if (record.awardCategory === 'outstanding' && record.achievementType === 'competition') {
-    return `For achieving ${record.positionOrAward.trim()} in ${record.competitionOrEvent.trim()}, demonstrating exceptional merit and bringing distinction to the Department of Computer Science & Engineering.`;
+    return `In recognition of achieving ${record.positionOrAward.trim()} at ${record.competitionOrEvent.trim()}, demonstrating exceptional merit and bringing distinction to the Department of Computer Science & Engineering.`;
   }
   if (record.awardCategory === 'outstanding') {
-    return `For an extraordinary achievement in ${record.achievementArea.trim()}, bringing pride and distinction to the Department of Computer Science & Engineering.`;
+    return `In recognition of an extraordinary achievement in ${record.achievementArea.trim()}, bringing distinction to the Department of Computer Science & Engineering.`;
+  }
+  if (record.awardCategory === 'coordination') {
+    return renderCitationTemplate(COURSE_COORDINATION_CITATION, record, settings);
   }
   const mapping = getCustomAwardMapping(record.awardCategory, settings);
   const template = record.customCategoryTemplate?.trim() || mapping?.citationTemplate.trim() || '';
@@ -417,7 +410,6 @@ export function validateRecord(record: CertificateRecord, settings = DEFAULT_SET
   if (record.awardCategory === 'research') {
     if (!record.articleTitle.trim() && !customMode) errors.push('Article title is required for Research Excellence.');
     if (!record.journalName.trim() && !customMode) errors.push('Journal name is required for Research Excellence.');
-    if (!record.q1Verified) errors.push('Confirm the journal Q1 status before generation.');
   }
   if (record.awardCategory === 'outstanding' && !customMode) {
     if (record.achievementType === 'competition') {
@@ -426,6 +418,9 @@ export function validateRecord(record: CertificateRecord, settings = DEFAULT_SET
     } else if (!record.achievementArea.trim()) {
       errors.push('Achievement area is required.');
     }
+  }
+  if (record.awardCategory === 'coordination' && !customMode && !record.coordinationPeriod.trim()) {
+    errors.push('Coordination period is required for Course Coordination Excellence.');
   }
   if (isCustomCategory(record.awardCategory) && !customMode) {
     const mapping = getCustomAwardMapping(record.awardCategory, settings);

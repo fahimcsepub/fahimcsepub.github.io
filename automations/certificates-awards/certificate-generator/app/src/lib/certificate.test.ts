@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_SETTINGS,
-  COURSE_COORDINATION_AWARD_MAPPING,
-  addCourseCoordinationPreset,
   emptyRecord,
   formatCertificateNumber,
   generateCitation,
@@ -11,6 +9,7 @@ import {
   normalizeSemester,
   normalizeTemplateId,
   parseCertificateNumber,
+  removeLegacyCourseCoordinationMappings,
   validateRecord,
 } from './certificate';
 
@@ -20,31 +19,41 @@ describe('certificate conventions', () => {
     expect(emptyRecord(DEFAULT_SETTINGS).templateId).toBe('pub-classic');
   });
 
-  it('ships the Course Coordination award as a ready-made custom mapping', () => {
-    const mapping = DEFAULT_SETTINGS.customAwardMappings.find((candidate) => candidate.id === COURSE_COORDINATION_AWARD_MAPPING.id);
-    expect(mapping?.fields[0].key).toBe('coordination_period');
-    expect(normalizeCategory('Course Coordinator')).toBe('custom:course-coordination');
+  it('ships Course Coordination as a permanent built-in award', () => {
+    expect(DEFAULT_SETTINGS.customAwardMappings).toEqual([]);
+    expect(normalizeCategory('Course Coordinator')).toBe('coordination');
+    expect(normalizeCategory('CCEA')).toBe('coordination');
     const record = {
       ...emptyRecord(DEFAULT_SETTINGS),
       recipientName: 'Dr. Ayesha Rahman',
-      awardCategory: 'custom:course-coordination' as const,
+      awardCategory: 'coordination' as const,
       awardYear: '2026',
       certificateNumber: 'CSE/SUM-2026/001',
-      customFields: { coordination_period: 'Spring 2025 – Summer 2026' },
-      customCategoryLabel: mapping?.label,
-      customCategoryTemplate: mapping?.citationTemplate,
-      customCategoryFields: mapping?.fields,
+      coordinationPeriod: 'Spring 2025 – Summer 2026',
     };
     expect(generateCitation(record)).toContain('Course Coordinator');
     expect(generateCitation(record)).toContain('Spring 2025 – Summer 2026');
     expect(validateRecord(record)).toEqual([]);
   });
 
-  it('adds the Course Coordination preset once during settings migration', () => {
-    const migrated = addCourseCoordinationPreset([]);
-    expect(migrated).toHaveLength(1);
-    expect(addCourseCoordinationPreset(migrated)).toHaveLength(1);
-    expect(addCourseCoordinationPreset([{ ...COURSE_COORDINATION_AWARD_MAPPING, id: 'custom:existing-demo' }])).toHaveLength(1);
+  it('migrates the former Course Coordinator mapping and records', () => {
+    const legacyMapping = {
+      id: 'custom:course-coordination' as const,
+      label: 'Course Coordination Excellence Award',
+      aliases: ['CCEA', 'Course Coordinator'],
+      description: '',
+      enabled: true,
+      fields: [],
+      citationTemplate: '',
+    };
+    expect(removeLegacyCourseCoordinationMappings([legacyMapping])).toEqual([]);
+    const migrated = normalizeCertificateRecord({
+      ...emptyRecord(DEFAULT_SETTINGS),
+      awardCategory: 'custom:course-coordination',
+      customFields: { coordination_period: 'Spring 2025 – Summer 2026' },
+    });
+    expect(migrated.awardCategory).toBe('coordination');
+    expect(migrated.coordinationPeriod).toBe('Spring 2025 – Summer 2026');
   });
 
   it('uses term-based numbering without award abbreviations', () => {
@@ -71,8 +80,34 @@ describe('certificate conventions', () => {
       awardYear: '2025',
       certificateNumber: 'CSE/SPR-2025/001',
     };
-    expect(generateCitation(record)).toContain('First Position among all students of the 4th Semester');
+    expect(generateCitation(record)).toContain('First Position among all students enrolled in the 4th Semester');
     expect(generateCitation(record)).toContain('Spring 2025 academic term');
+  });
+
+  it('uses concise standalone wording for every official award', () => {
+    const base = {
+      ...emptyRecord(DEFAULT_SETTINGS),
+      recipientName: 'Approved Recipient',
+      awardYear: '2026',
+      certificateNumber: 'CSE/SPR-2026/001',
+    };
+    const citations = [
+      generateCitation({ ...base, studySemester: '1st Semester' }),
+      generateCitation({ ...base, awardCategory: 'research', articleTitle: 'Responsible Computing', journalName: 'Journal of Computing', q1Verified: true }),
+      generateCitation({ ...base, awardCategory: 'outstanding', achievementType: 'competition', positionOrAward: 'First Place', competitionOrEvent: 'National Photography Competition' }),
+      generateCitation({ ...base, awardCategory: 'outstanding', achievementType: 'general', achievementArea: 'community technology leadership' }),
+      generateCitation({ ...base, awardCategory: 'coordination', coordinationPeriod: 'Spring 2025 – Summer 2026' }),
+    ];
+    citations.forEach((citation) => {
+      expect(citation).toMatch(/^In recognition of /);
+      expect(citation.length).toBeLessThanOrEqual(260);
+      expect((citation.match(/in recognition/gi) ?? [])).toHaveLength(1);
+    });
+    expect(citations[0]).toContain('students enrolled in the 1st Semester');
+    expect(citations[1]).toContain('a Q1-ranked journal');
+    expect(citations[2]).toContain('First Place at National Photography Competition');
+    expect(citations[3]).toContain('bringing distinction to the Department');
+    expect(citations[4]).toContain('completing the appointment as Course Coordinator');
   });
 
   it('supports semester, batch, and custom Academic Excellence scopes', () => {
@@ -95,7 +130,7 @@ describe('certificate conventions', () => {
     expect(generateCitation(migrated)).toBe('Approved historical wording.');
   });
 
-  it('blocks placeholder text and missing Q1 verification', () => {
+  it('blocks placeholder text and supports ranked or unranked research publications', () => {
     const placeholder = {
       ...emptyRecord(DEFAULT_SETTINGS),
       recipientName: '{{RECIPIENT_NAME}}',
@@ -111,7 +146,9 @@ describe('certificate conventions', () => {
       articleTitle: 'A verified paper',
       journalName: 'Journal of Examples',
     };
-    expect(validateRecord(research)).toContain('Confirm the journal Q1 status before generation.');
+    expect(validateRecord(research)).toEqual([]);
+    expect(generateCitation(research)).not.toContain('Q1');
+    expect(generateCitation({ ...research, q1Verified: true })).toContain('a Q1-ranked journal');
   });
 
   it('supports reusable custom award mappings and CSV aliases', () => {

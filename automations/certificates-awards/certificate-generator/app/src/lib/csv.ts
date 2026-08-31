@@ -40,6 +40,7 @@ export const CSV_HEADERS = [
   'competition_or_event',
   'position_or_award',
   'achievement_area',
+  'coordination_period',
   'citation_mode',
   'custom_citation',
 ] as const;
@@ -136,6 +137,7 @@ function makeRecord(
     competitionOrEvent: (raw.competition_or_event ?? '').trim(),
     positionOrAward: (raw.position_or_award ?? '').trim(),
     achievementArea: (raw.achievement_area ?? '').trim(),
+    coordinationPeriod: (raw.coordination_period ?? raw.field_coordination_period ?? '').trim(),
     citationMode: citationMode(raw.citation_mode, customCitation),
     customCitation,
     customFields: customFieldsFromRaw(raw),
@@ -214,13 +216,16 @@ export function revalidateBulkRows(rows: BulkRow[], register: RegisterEntry[], s
 export function sampleCsv(settings = DEFAULT_SETTINGS): string {
   const rows = [
     {
-      recipient_name: 'Nusrat Jahan', award_category: 'Academic Excellence Award', template: 'PUB Classic Blue', achievement_type: '', academic_scope: 'semester', study_semester: '4th Semester', ranking_group: '', batch: '', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: '', journal_name: '', doi: '', publication_url: '', q1_verified: '', competition_or_event: '', position_or_award: '', achievement_area: '', citation_mode: 'automatic', custom_citation: '',
+      recipient_name: 'Nusrat Jahan', award_category: 'Academic Excellence Award', template: 'PUB Classic Blue', achievement_type: '', academic_scope: 'semester', study_semester: '4th Semester', ranking_group: '', batch: '', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: '', journal_name: '', doi: '', publication_url: '', q1_verified: '', competition_or_event: '', position_or_award: '', achievement_area: '', coordination_period: '', citation_mode: 'automatic', custom_citation: '',
     },
     {
-      recipient_name: 'Mahmud Hasan', award_category: 'Research Excellence Award', template: 'Modern Vintage', achievement_type: '', academic_scope: '', study_semester: '', ranking_group: '', batch: '', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: 'Efficient Learning for Smart Systems', journal_name: 'Example Computing Journal', doi: '10.0000/example', publication_url: 'https://example.org/article', q1_verified: 'yes', competition_or_event: '', position_or_award: '', achievement_area: '', citation_mode: 'automatic', custom_citation: '',
+      recipient_name: 'Mahmud Hasan', award_category: 'Research Excellence Award', template: 'Modern Vintage', achievement_type: '', academic_scope: '', study_semester: '', ranking_group: '', batch: '', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: 'Efficient Learning for Smart Systems', journal_name: 'Example Computing Journal', doi: '10.0000/example', publication_url: 'https://example.org/article', q1_verified: 'yes', competition_or_event: '', position_or_award: '', achievement_area: '', coordination_period: '', citation_mode: 'automatic', custom_citation: '',
     },
     {
-      recipient_name: 'Team Pundra', award_category: 'Outstanding Achievement Award', template: 'PUB Classic Blue', achievement_type: 'competition', academic_scope: '', study_semester: '', ranking_group: '', batch: '', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: '', journal_name: '', doi: '', publication_url: '', q1_verified: '', competition_or_event: 'National Programming Contest', position_or_award: 'Champion', achievement_area: '', citation_mode: 'automatic', custom_citation: '',
+      recipient_name: 'Team Pundra', award_category: 'Outstanding Achievement Award', template: 'PUB Classic Blue', achievement_type: 'competition', academic_scope: '', study_semester: '', ranking_group: '', batch: '', semester: 'Spring', award_year: '2026', issue_date: '2026-08-30', certificate_number: '', article_title: '', journal_name: '', doi: '', publication_url: '', q1_verified: '', competition_or_event: 'National Programming Contest', position_or_award: 'Champion', achievement_area: '', coordination_period: '', citation_mode: 'automatic', custom_citation: '',
+    },
+    {
+      recipient_name: 'Dr. Ayesha Rahman', award_category: 'Course Coordination Excellence Award', template: 'PUB Classic Blue', achievement_type: '', academic_scope: '', study_semester: '', ranking_group: '', batch: '', semester: 'Summer', award_year: '2026', issue_date: '2026-08-31', certificate_number: '', article_title: '', journal_name: '', doi: '', publication_url: '', q1_verified: '', competition_or_event: '', position_or_award: '', achievement_area: '', coordination_period: 'Spring 2025 – Summer 2026', citation_mode: 'automatic', custom_citation: '',
     },
   ];
   const customHeaders = [...new Set(settings.customAwardMappings.flatMap((mapping) => mapping.fields.map((field) => `field_${normalizeCustomFieldKey(field.key)}`)))].filter((header) => header !== 'field_');
@@ -260,6 +265,7 @@ export function registerCsv(entries: RegisterEntry[], settings: GeneratorSetting
     competition_or_event: csvSafe(entry.competitionOrEvent),
     position_or_award: csvSafe(entry.positionOrAward),
     achievement_area: csvSafe(entry.achievementArea),
+    coordination_period: csvSafe(entry.coordinationPeriod),
     citation_mode: entry.citationMode,
     custom_citation: csvSafe(entry.customCitation),
     ...Object.fromEntries(customKeys.map((key) => [`field_${key}`, csvSafe(entry.customFields?.[key] ?? '')])),

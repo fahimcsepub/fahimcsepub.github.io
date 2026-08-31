@@ -1,4 +1,4 @@
-export type BuiltInAwardCategory = 'academic' | 'research' | 'outstanding';
+export type BuiltInAwardCategory = 'academic' | 'research' | 'outstanding' | 'coordination';
 export type AwardCategory = BuiltInAwardCategory | `custom:${string}`;
 export type AchievementType = 'competition' | 'general';
 export type Semester = 'Spring' | 'Summer' | 'Fall';
@@ -51,6 +51,7 @@ export interface CertificateRecord {
   competitionOrEvent: string;
   positionOrAward: string;
   achievementArea: string;
+  coordinationPeriod: string;
   citationMode: CitationMode;
   customCitation: string;
   customFields: Record<string, string>;

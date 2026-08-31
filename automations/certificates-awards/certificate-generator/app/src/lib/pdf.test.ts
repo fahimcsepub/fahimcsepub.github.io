@@ -123,4 +123,43 @@ describe('PDF generation', () => {
       }
     }
   }, 15_000);
+
+  it('renders concise wording previews for every official award', async () => {
+    const baseRecord = {
+      ...emptyRecord(DEFAULT_SETTINGS),
+      recipientName: 'Approved Recipient',
+      awardYear: '2026',
+      issueDate: '2026-08-31',
+    };
+    const records = [
+      { ...baseRecord, templateId: 'pub-classic' as const, studySemester: '1st Semester', certificateNumber: 'CSE/SPR-2026/001' },
+      { ...baseRecord, templateId: 'modern-vintage' as const, awardCategory: 'research' as const, articleTitle: 'Responsible Computing', journalName: 'Journal of Computing', q1Verified: false, certificateNumber: 'CSE/SPR-2026/002' },
+      { ...baseRecord, templateId: 'pub-classic' as const, awardCategory: 'research' as const, articleTitle: 'Responsible Computing', journalName: 'Journal of Computing', q1Verified: true, certificateNumber: 'CSE/SPR-2026/003' },
+      { ...baseRecord, templateId: 'pub-classic' as const, awardCategory: 'outstanding' as const, achievementType: 'competition' as const, positionOrAward: 'First Place', competitionOrEvent: 'National Photography Competition', certificateNumber: 'CSE/SPR-2026/004' },
+      { ...baseRecord, templateId: 'modern-vintage' as const, awardCategory: 'coordination' as const, coordinationPeriod: 'Spring 2025 – Summer 2026', certificateNumber: 'CSE/SUM-2026/001' },
+    ];
+    const previews = await Promise.all(records.map(async (record) => ({
+      record,
+      bytes: await generateCertificatePdf(record, {
+        settings: DEFAULT_SETTINGS,
+        assetBaseUrl: 'http://test.local/assets/',
+      }),
+    })));
+
+    for (const preview of previews) {
+      const pdf = await PDFDocument.load(preview.bytes);
+      expect(pdf.getSubject()).toMatch(/^In recognition of /);
+      expect(pdf.getSubject()).not.toContain('exemplary commitment to excellence');
+      expect((pdf.getSubject()?.match(/in recognition/gi) ?? [])).toHaveLength(1);
+    }
+
+    if (process.env.CSE_WRITE_WORDING_PREVIEWS === '1') {
+      const outputDirectory = join(projectRoot, 'tmp', 'pdfs', 'wording-review', 'updated');
+      await mkdir(outputDirectory, { recursive: true });
+      for (const preview of previews) {
+        const label = preview.record.awardCategory.replace(/[^a-z]+/g, '-');
+        await writeFile(join(outputDirectory, `${label}-${preview.record.templateId}.pdf`), preview.bytes);
+      }
+    }
+  }, 20_000);
 });

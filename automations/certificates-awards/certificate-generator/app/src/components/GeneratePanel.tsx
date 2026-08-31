@@ -224,10 +224,12 @@ export function GeneratePanel({
               <Field label="DOI" hint="Optional register metadata"><Input value={record.doi} onChange={(event) => update('doi', event.target.value)} /></Field>
               <Field label="Publication URL" hint="Optional register metadata"><Input type="url" value={record.publicationUrl} onChange={(event) => update('publicationUrl', event.target.value)} /></Field>
             </div>
-            <label className="check-row">
-              <input type="checkbox" checked={record.q1Verified} onChange={(event) => update('q1Verified', event.target.checked)} />
-              <span><strong>Q1 status verified</strong><small>I have confirmed the journal quartile for the relevant publication year.</small></span>
-            </label>
+            <Field label="Journal recognition" hint="Choose Q1 only when the journal ranking has been verified for the relevant publication year.">
+              <Select value={record.q1Verified ? 'q1' : 'general'} onChange={(event) => update('q1Verified', event.target.value === 'q1')}>
+                <option value="general">General research publication — no ranking stated</option>
+                <option value="q1">Q1 journal — verified</option>
+              </Select>
+            </Field>
           </div>
         )}
 
@@ -241,12 +243,20 @@ export function GeneratePanel({
             </Field>
             {record.achievementType === 'competition' ? (
               <div className="field-grid">
-                <Field label="Position or award"><Input value={record.positionOrAward} onChange={(event) => update('positionOrAward', event.target.value)} placeholder="e.g. Champion" /></Field>
+                <Field label="Position or award"><Input value={record.positionOrAward} onChange={(event) => update('positionOrAward', event.target.value)} placeholder="e.g. First Place" /></Field>
                 <Field label="Competition or event"><Input value={record.competitionOrEvent} onChange={(event) => update('competitionOrEvent', event.target.value)} /></Field>
               </div>
             ) : (
               <Field label="Achievement area"><Input value={record.achievementArea} onChange={(event) => update('achievementArea', event.target.value)} placeholder="e.g. national innovation leadership" /></Field>
             )}
+          </div>
+        )}
+
+        {record.awardCategory === 'coordination' && (
+          <div className="dynamic-fields">
+            <Field label="Coordination period" hint="Enter the official beginning and ending academic terms for the completed appointment.">
+              <Input value={record.coordinationPeriod} onChange={(event) => update('coordinationPeriod', event.target.value)} placeholder="e.g. Spring 2025 – Summer 2026" />
+            </Field>
           </div>
         )}
 
