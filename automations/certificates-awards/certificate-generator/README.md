@@ -11,6 +11,7 @@ This privacy-first browser application generates print-ready A4 landscape certif
 - Academic Excellence Award
 - Research Excellence Award
 - Outstanding Achievement Award
+- Course Coordination Excellence Award (ready-made custom mapping)
 - Reusable custom award mappings created in Settings
 
 ## Certificate templates
@@ -61,22 +62,23 @@ position_or_award
 achievement_area
 citation_mode
 custom_citation
+field_coordination_period
 ```
 
 Exact header row:
 
 ```csv
-recipient_name,award_category,template,achievement_type,academic_scope,study_semester,ranking_group,batch,semester,award_year,issue_date,certificate_number,article_title,journal_name,doi,publication_url,q1_verified,competition_or_event,position_or_award,achievement_area,citation_mode,custom_citation
+recipient_name,award_category,template,achievement_type,academic_scope,study_semester,ranking_group,batch,semester,award_year,issue_date,certificate_number,article_title,journal_name,doi,publication_url,q1_verified,competition_or_event,position_or_award,achievement_area,citation_mode,custom_citation,field_coordination_period
 ```
 
 ## Mixed-category CSV example
 
 ```csv
-recipient_name,award_category,template,achievement_type,academic_scope,study_semester,ranking_group,batch,semester,award_year,issue_date,certificate_number,article_title,journal_name,doi,publication_url,q1_verified,competition_or_event,position_or_award,achievement_area,citation_mode,custom_citation
-Nusrat Jahan,Academic Excellence Award,PUB Classic Blue,,semester,4th Semester,,,Spring,2026,2026-08-30,,,,,,,,,,automatic,
-Mahmud Hasan,Research Excellence Award,Modern Vintage,,,,,,Spring,2026,2026-08-30,,Efficient Learning for Smart Systems,Example Computing Journal,10.0000/example,https://example.org/article,yes,,,,automatic,
-Team Pundra,Outstanding Achievement Award,PUB Classic Blue,competition,,,,,Spring,2026,2026-08-30,,,,,,National Programming Contest,Champion,,automatic,
-Ayesha Rahman,Outstanding Achievement Award,Modern Vintage,general,,,,,Spring,2026,2026-08-30,,,,,,,,International robotics innovation,automatic,
+recipient_name,award_category,template,achievement_type,academic_scope,study_semester,ranking_group,batch,semester,award_year,issue_date,certificate_number,article_title,journal_name,doi,publication_url,q1_verified,competition_or_event,position_or_award,achievement_area,citation_mode,custom_citation,field_coordination_period
+Nusrat Jahan,Academic Excellence Award,PUB Classic Blue,,semester,4th Semester,,,Spring,2026,2026-08-30,,,,,,,,,,automatic,,
+Mahmud Hasan,Research Excellence Award,Modern Vintage,,,,,,Spring,2026,2026-08-30,,Efficient Learning for Smart Systems,Example Computing Journal,10.0000/example,https://example.org/article,yes,,,,automatic,,
+Team Pundra,Outstanding Achievement Award,PUB Classic Blue,competition,,,,,Spring,2026,2026-08-30,,,,,,National Programming Contest,Champion,,automatic,,
+Ayesha Rahman,Outstanding Achievement Award,Modern Vintage,general,,,,,Spring,2026,2026-08-30,,,,,,,,International robotics innovation,automatic,,
 ```
 
 ## Required fields by award
@@ -89,6 +91,7 @@ Ayesha Rahman,Outstanding Achievement Award,Modern Vintage,general,,,,,Spring,20
 | Research Excellence | `recipient_name`, `article_title`, `journal_name`, verified `q1_verified`, result term/year/date |
 | Outstanding Achievement—competition | `recipient_name`, `achievement_type=competition`, `competition_or_event`, `position_or_award`, result term/year/date |
 | Outstanding Achievement—general | `recipient_name`, `achievement_type=general`, `achievement_area`, result term/year/date |
+| Course Coordination Excellence | `recipient_name`, `award_category=CCEA`, `field_coordination_period`, result term/year/date |
 
 ## Accepted values and rules
 
@@ -108,6 +111,8 @@ Ayesha Rahman,Outstanding Achievement Award,Modern Vintage,general,,,,,Spring,20
 - Maximum import size is 500 rows.
 
 ## Custom award mappings
+
+The ready-made **Course Coordination Excellence Award** mapping is included for new and existing users. It accepts `CCEA` or `Course Coordinator` in CSV files and uses `field_coordination_period` to fill `{{COORDINATION_PERIOD}}` in its recommended citation. It can be edited, disabled, or removed like any other custom mapping.
 
 1. Open **Settings → Custom award mappings**.
 2. Select **Add category**.

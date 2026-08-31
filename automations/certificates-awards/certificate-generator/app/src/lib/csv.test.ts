@@ -4,7 +4,9 @@ import { parseBulkCsv, parseRegisterCsv, registerCsv, rowsToRegisterEntries, sam
 
 describe('bulk CSV import', () => {
   it('parses a mixed-category template and allocates shared serial numbers', () => {
-    const result = parseBulkCsv(sampleCsv(), DEFAULT_SETTINGS, []);
+    const template = sampleCsv();
+    expect(template).toContain('field_coordination_period');
+    const result = parseBulkCsv(template, DEFAULT_SETTINGS, []);
     expect(result.fileErrors).toEqual([]);
     expect(result.rows).toHaveLength(3);
     expect(result.rows.every((row) => row.errors.length === 0)).toBe(true);
@@ -16,6 +18,17 @@ describe('bulk CSV import', () => {
       'CSE/SPR-2026/002',
       'CSE/SPR-2026/003',
     ]);
+  });
+
+  it('imports the ready-made Course Coordinator mapping and its reusable field', () => {
+    const csv = [
+      'recipient_name,award_category,field_coordination_period,semester,award_year,issue_date,certificate_number',
+      'Dr. Ayesha Rahman,CCEA,Spring 2025 – Summer 2026,Summer,2026,2026-08-31,CSE/SUM-2026/001',
+    ].join('\n');
+    const result = parseBulkCsv(csv, DEFAULT_SETTINGS, []);
+    expect(result.rows[0].record.awardCategory).toBe('custom:course-coordination');
+    expect(result.rows[0].record.customFields.coordination_period).toBe('Spring 2025 – Summer 2026');
+    expect(result.rows[0].errors).toEqual([]);
   });
 
   it('accepts quoted commas and reports ambiguous categories', () => {
