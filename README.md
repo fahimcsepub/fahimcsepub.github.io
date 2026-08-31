@@ -2,6 +2,8 @@
 
 A modular collection of browser-based tools for the Department of Computer Science & Engineering at Pundra University. Each automation lives under a functional category with its own documentation, application code, references, samples, inputs, and outputs.
 
+Developer and AI-tool handoff information is maintained in [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md). Codex and Claude load it through the repository-level `AGENTS.md` and `CLAUDE.md` files.
+
 **Live portal:** [https://fahimcsepub.github.io/](https://fahimcsepub.github.io/)
 
 ## Automation directory
