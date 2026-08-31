@@ -12,6 +12,11 @@ import {
 } from './certificate';
 
 describe('certificate conventions', () => {
+  it('uses PUST Classic Blue as the official default template', () => {
+    expect(DEFAULT_SETTINGS.defaultTemplateId).toBe('pust-classic');
+    expect(emptyRecord(DEFAULT_SETTINGS).templateId).toBe('pust-classic');
+  });
+
   it('uses term-based numbering without award abbreviations', () => {
     expect(formatCertificateNumber('CSE', 'Spring', 2025, 1)).toBe('CSE/SPR-2025/001');
     expect(formatCertificateNumber('CSE', 'Summer', 2025, 12)).toBe('CSE/SUM-2025/012');

@@ -47,7 +47,7 @@ export const DEFAULT_SETTINGS: GeneratorSettings = {
   signatoryTwoLabel: 'Dean, Faculty of Science & Engineering',
   defaultSignatureMode: 'wet',
   defaultSignatureLayout: 'two',
-  defaultTemplateId: 'modern-vintage',
+  defaultTemplateId: 'pust-classic',
   customAwardMappings: [],
 };
 

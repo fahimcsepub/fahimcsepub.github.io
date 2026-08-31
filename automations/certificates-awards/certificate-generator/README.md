@@ -15,6 +15,8 @@ This privacy-first browser application generates print-ready A4 landscape certif
 
 ## Certificate templates
 
+**PUST Classic Blue is the official default template** for new certificates and CSV rows that do not specify a template. Users can still select Modern Vintage for an individual certificate or change their saved default in Settings.
+
 - `Modern Vintage`
 - `PUST Classic Blue`
 
