@@ -42,7 +42,7 @@ The Git repository root is `PUB-CSE-Automations`, not the current workspace's pa
 - Default branch: `main`.
 - Current award model includes **Course Coordination Excellence Award** as a permanent fourth built-in category.
 - GitHub Pages deployment completed successfully after the merge.
-- At the last verification, all **19 Vitest tests** passed and the Vite production build succeeded.
+- At the last verification, all **22 Vitest tests** passed and the Vite production build succeeded.
 - The site is designed to work at the GitHub Pages root and under relative asset paths.
 - **PUB Classic Blue** is the default certificate template. Modern Vintage remains available.
 
@@ -101,6 +101,7 @@ Approved source slides remain in the module's `references/` directory. When adju
 - Recipient name uses Libre Baskerville SemiBold, not a calligraphy font. Bengali names use Noto Serif Bengali fallback.
 - Keep the department logo clear of the top border.
 - Certificate number and issue date must remain correctly balanced at the upper left/right positions defined by the approved templates.
+- In PUB Classic Blue, the two award-category rules and the recipient-name rule are 1 pt. The award rules are optically centered on the uppercase category label; keep their equal lengths, equal gaps, colors, and group centering intact.
 - Never print editor hints or placeholder strings.
 
 ### Templates and signatures
