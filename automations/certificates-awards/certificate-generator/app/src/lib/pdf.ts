@@ -18,6 +18,12 @@ import {
 
 export const A4_LANDSCAPE: [number, number] = [841.89, 595.28];
 
+export const PUB_CLASSIC_RULE_STYLE = {
+  awardRuleHeight: 1,
+  awardRuleOpticalCenterFactor: 0.35,
+  recipientRuleHeight: 1,
+} as const;
+
 interface AssetBytes {
   background: Uint8Array;
   logo: Uint8Array;
@@ -378,11 +384,14 @@ export async function generateCertificatePdf(
     const subtitleTracking = 1.6;
     const subtitleWidth = trackedTextWidth(subtitle, sourceBold, subtitleFit.size, subtitleTracking);
     const subtitleY = baseline(340.3, 12.51);
-    const ruleY = height - (348.6 + 1) * scaleY;
+    const ruleHeight = PUB_CLASSIC_RULE_STYLE.awardRuleHeight;
+    const ruleY = subtitleY
+      + subtitleFit.size * PUB_CLASSIC_RULE_STYLE.awardRuleOpticalCenterFactor
+      - ruleHeight / 2;
     const ruleWidth = 46 * scaleX;
     const ruleGap = 7 * scaleX;
-    page.drawRectangle({ x: width / 2 - subtitleWidth / 2 - ruleGap - ruleWidth, y: ruleY, width: ruleWidth, height: scaleY, color: softGold });
-    page.drawRectangle({ x: width / 2 + subtitleWidth / 2 + ruleGap, y: ruleY, width: ruleWidth, height: scaleY, color: softGold });
+    page.drawRectangle({ x: width / 2 - subtitleWidth / 2 - ruleGap - ruleWidth, y: ruleY, width: ruleWidth, height: ruleHeight, color: softGold });
+    page.drawRectangle({ x: width / 2 + subtitleWidth / 2 + ruleGap, y: ruleY, width: ruleWidth, height: ruleHeight, color: softGold });
     drawCenteredTrackedText(page, subtitle, subtitleY, sourceBold, subtitleFit.size, subtitleTracking, gold);
 
     drawCenteredLines(
@@ -402,7 +411,13 @@ export async function generateCertificatePdf(
       : baseline(403.5, 27) + (27 * scaleY - fittedName.size);
     drawCenteredLines(page, fittedName.lines, nameFont, fittedName.size, nameStart, fittedName.size * 1.14, blue);
     const nameRule = fromPpt(281, 465.38, 560, 1);
-    page.drawRectangle({ ...nameRule, color: rgb(217 / 255, 211 / 255, 198 / 255) });
+    const recipientRuleHeight = PUB_CLASSIC_RULE_STYLE.recipientRuleHeight;
+    page.drawRectangle({
+      ...nameRule,
+      y: nameRule.y - (recipientRuleHeight - nameRule.height) / 2,
+      height: recipientRuleHeight,
+      color: rgb(217 / 255, 211 / 255, 198 / 255),
+    });
 
     const citation = generateCitation(record, options.settings);
     const citationFont = containsBengali(citation) ? bengaliRegular : libreItalic;

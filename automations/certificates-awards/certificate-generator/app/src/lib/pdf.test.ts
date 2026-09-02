@@ -3,7 +3,7 @@ import { basename, join, resolve } from 'node:path';
 import { PDFDict, PDFDocument, PDFName } from 'pdf-lib';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SETTINGS, emptyRecord } from './certificate';
-import { A4_LANDSCAPE, generateCertificatePdf } from './pdf';
+import { A4_LANDSCAPE, generateCertificatePdf, PUB_CLASSIC_RULE_STYLE } from './pdf';
 
 const projectRoot = process.cwd();
 const assetMap: Record<string, string> = {
@@ -160,6 +160,56 @@ describe('PDF generation', () => {
         const label = preview.record.awardCategory.replace(/[^a-z]+/g, '-');
         await writeFile(join(outputDirectory, `${label}-${preview.record.templateId}.pdf`), preview.bytes);
       }
+    }
+  }, 20_000);
+
+  it('renders the approved PUB Classic rule treatment across official awards and signature layouts', async () => {
+    expect(PUB_CLASSIC_RULE_STYLE).toEqual({
+      awardRuleHeight: 1,
+      awardRuleOpticalCenterFactor: 0.35,
+      recipientRuleHeight: 1,
+    });
+
+    const baseRecord = {
+      ...emptyRecord(DEFAULT_SETTINGS),
+      templateId: 'pub-classic' as const,
+      recipientName: 'Approved Recipient',
+      awardYear: '2026',
+      issueDate: '2026-09-02',
+    };
+    const records = [
+      { ...baseRecord, studySemester: '1st Semester', certificateNumber: 'CSE/SPR-2026/001' },
+      { ...baseRecord, awardCategory: 'research' as const, articleTitle: 'Responsible Computing', journalName: 'Journal of Computing', q1Verified: true, certificateNumber: 'CSE/SPR-2026/002' },
+      { ...baseRecord, awardCategory: 'outstanding' as const, achievementType: 'competition' as const, positionOrAward: 'First Place', competitionOrEvent: 'National Photography Competition', certificateNumber: 'CSE/SPR-2026/003' },
+      { ...baseRecord, awardCategory: 'coordination' as const, coordinationPeriod: 'Spring 2025 - Summer 2026', certificateNumber: 'CSE/SPR-2026/004' },
+      { ...baseRecord, studySemester: '1st Semester', signatureLayout: 'one' as const, certificateNumber: 'CSE/SPR-2026/005' },
+    ];
+    const previews = await Promise.all(records.map(async (record) => ({
+      record,
+      bytes: await generateCertificatePdf(record, {
+        settings: DEFAULT_SETTINGS,
+        assetBaseUrl: 'http://test.local/assets/',
+      }),
+    })));
+
+    for (const preview of previews) {
+      const pdf = await PDFDocument.load(preview.bytes);
+      expect(pdf.getPageCount()).toBe(1);
+      expect(pdf.getPage(0).getSize().width).toBeCloseTo(A4_LANDSCAPE[0], 1);
+      const xObjects = pdf.getPage(0).node.Resources()!.lookup(PDFName.of('XObject'), PDFDict);
+      expect(xObjects?.keys()).toHaveLength(preview.record.signatureLayout === 'one' ? 2 : 3);
+    }
+
+    if (process.env.CSE_WRITE_PUB_CLASSIC_RULE_REVIEW === '1') {
+      const outputDirectory = join(projectRoot, 'tmp', 'pdfs', 'pub-classic-rule-review');
+      await mkdir(outputDirectory, { recursive: true });
+      const combined = await PDFDocument.create();
+      for (const preview of previews) {
+        const source = await PDFDocument.load(preview.bytes);
+        const [page] = await combined.copyPages(source, [0]);
+        combined.addPage(page);
+      }
+      await writeFile(join(outputDirectory, 'PUB_Classic_Rule_Review.pdf'), await combined.save());
     }
   }, 20_000);
 });

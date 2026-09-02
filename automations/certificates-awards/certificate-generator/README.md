@@ -18,6 +18,8 @@ This privacy-first browser application generates print-ready A4 landscape certif
 
 **PUB Classic Blue is the official default template** for new certificates and CSV rows that do not specify a template. Users can still select Modern Vintage for an individual certificate or change their saved default in Settings.
 
+PUB Classic Blue uses balanced 1 pt award-category divider rules aligned to the optical center of the uppercase category label, plus a subtle 1 pt recipient-name rule for reliable print visibility.
+
 - `Modern Vintage`
 - `PUB Classic Blue`
 
